@@ -1,0 +1,1144 @@
+/* ================================================================
+   RESPONSIVE.CSS — Complete Responsive & Mobile Scrolling System
+   Pharmacy MVP / Core SaaS Healthcare Panel
+   Breakpoints: 1280px | 1100px | 1024px | 768px | 640px | 480px | 360px
+   ================================================================ */
+
+/* ================================================================
+   GLOBAL BASE & SCROLLING RULES (All Screen Sizes)
+   ================================================================ */
+
+html {
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg, #fbfcfe);
+  color: var(--text, #0f172a);
+}
+
+/* Prevent horizontal page blowouts while keeping vertical scrolling natural */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Base tap target and input font sizes to avoid iOS auto-zoom */
+input,
+select,
+textarea {
+  font-size: 16px;
+  max-width: 100%;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+/* Hide desktop toggle buttons by default */
+.console-topbar-menu-button {
+  display: none;
+}
+
+/* Ensure all panels & cards never blow past their container */
+.panel,
+.pos-panel,
+.module-panel,
+.import-export-card,
+.report-overview-card,
+.report-metric-card,
+.settings-card,
+.backup-action-card,
+.backup-schedule-card,
+.card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* All data tables scroll horizontally within their containers if wide */
+.table-panel,
+.pos-table-panel,
+.report-table-panel,
+.module-inventory-table-wrap,
+.data-table-wrap,
+.table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ================================================================
+   <= 1280px : Large Tablets / Small Laptops
+   ================================================================ */
+@media (max-width: 1280px) {
+  .module-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .module-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pos-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .module-reports-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .module-stock-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pos-sale-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-settings-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .report-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ================================================================
+   <= 1100px : Tablet Landscape
+   ================================================================ */
+@media (max-width: 1100px) {
+  /* Console sidebar -> icon-only mode for medium desktops */
+  .console-shell {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+
+  .brand-copy,
+  .nav-item span,
+  .sidebar-bottom {
+    display: none;
+  }
+
+  .brand {
+    grid-template-columns: 34px;
+    justify-content: center;
+  }
+
+  .sidebar-menu {
+    display: none;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* Module sidebar -> collapsed icon-only mode */
+  .module-shell {
+    grid-template-columns: 78px minmax(0, 1fr);
+  }
+
+  .module-sidebar-brand strong,
+  .module-side-nav span,
+  .module-user-card div,
+  .module-user-card > svg {
+    display: none;
+  }
+
+  .module-sidebar {
+    align-items: center;
+  }
+
+  .module-sidebar-brand,
+  .module-side-nav a {
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* All main grids -> 2 columns */
+  .stats-grid,
+  .dashboard-grid,
+  .cards-grid,
+  .role-list-grid,
+  .info-grid,
+  .backup-stat-grid,
+  .module-stats-grid,
+  .pos-metric-grid,
+  .pos-action-grid,
+  .pos-payment-methods,
+  .report-overview-grid,
+  .report-metric-grid,
+  .module-stock-grid,
+  .module-reports-grid,
+  .module-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Auth / Login screens stack */
+  .auth-login-screen,
+  .module-login-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-shelf-panel,
+  .module-login-visual {
+    display: none;
+  }
+
+  .auth-brand-panel,
+  .module-login-brand {
+    min-height: auto;
+    padding: 36px 24px;
+  }
+
+  .auth-form-panel,
+  .module-login-card {
+    min-height: auto;
+    padding: 36px 28px 56px;
+    width: min(100%, 680px);
+    margin: 0 auto;
+  }
+
+  /* Settings & Forms stack */
+  .form-fields.two-cols,
+  .form-fields.three-cols,
+  .settings-columns,
+  .settings-columns.three-cols,
+  .settings-system-fields,
+  .settings-inline-field:not(.field-span-full),
+  .report-split-grid,
+  .report-donut-layout,
+  .pos-dashboard-grid,
+  .pos-sale-layout,
+  .pos-payment-grid,
+  .pos-settings-layout,
+  .pos-discount-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pos-settings-layout {
+    gap: 16px;
+  }
+
+  /* Charts horizontal scrolling */
+  .module-chart-wrap,
+  .module-chart-dates,
+  .report-chart-wrap,
+  .pos-chart-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .section-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-hero-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .page-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .page-actions .button,
+  .page-actions a {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}
+
+/* ================================================================
+   <= 1024px : Tablet Portrait & Mobile Drawer System
+   Full document scrolling & touch-friendly drawer
+   ================================================================ */
+@media (max-width: 1024px) {
+  /* ── Shells: Full width, natural document scrolling (NO max-height / overflow trap) ── */
+  .console-shell,
+  .module-shell,
+  .module-shell-collapsed {
+    display: block;
+    width: 100%;
+    min-height: 100dvh;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .console-main,
+  .module-main {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .console-main .content {
+    padding: 16px 14px 28px;
+    overflow: visible;
+  }
+
+  .module-page-content {
+    padding: 14px 12px 28px;
+    overflow: visible;
+  }
+
+  /* ── Console Topbar Hamburger Button ── */
+  .console-topbar-menu-button {
+    display: inline-grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+    z-index: 300;
+  }
+
+  .console-topbar-menu-button svg {
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+  }
+
+  /* ── Console Sidebar: Off-Canvas Drawer ── */
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 250;
+    width: min(280px, 85vw);
+    height: 100dvh;
+    height: 100vh;
+    padding: 16px 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translateX(-110%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), visibility 220ms ease;
+    background: linear-gradient(180deg, var(--sidebar, #243746), var(--sidebar-deep, #172838));
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .console-shell-sidebar-open .sidebar,
+  .console-shell[data-sidebar-open='true'] .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* Restore sidebar labels inside drawer */
+  .brand-copy,
+  .nav-item span {
+    display: block !important;
+  }
+
+  .sidebar-bottom {
+    display: grid !important;
+    position: static;
+    left: unset;
+    right: unset;
+    bottom: unset;
+    margin-top: 20px;
+  }
+
+  .brand {
+    grid-template-columns: 34px 1fr 34px;
+    justify-content: unset;
+  }
+
+  .sidebar-menu {
+    display: inline-grid;
+  }
+
+  .nav-item {
+    justify-content: flex-start;
+    padding: 0 12px;
+    min-height: 44px;
+  }
+
+  .nav-list {
+    grid-template-columns: 1fr;
+  }
+
+  /* Console Sidebar Backdrop */
+  .console-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 240;
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .console-shell-sidebar-open .console-sidebar-backdrop,
+  .console-shell[data-sidebar-open='true'] .console-sidebar-backdrop {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .console-sidebar-backdrop[hidden] {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  /* ── Console Topbar ── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 58px;
+    padding: 8px 12px;
+    background: var(--surface, #fff);
+    border-bottom: 1px solid var(--line, #e2e8f0);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .tenant-filters {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tenant-filters label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tenant-filters select,
+  .select-box select {
+    min-width: 0;
+    width: 100%;
+    height: 38px;
+    font-size: 15px;
+    padding: 0 8px;
+  }
+
+  .tenant-filters span {
+    font-size: 11px;
+  }
+
+  .topbar-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .topbar-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* ── Module Topbar & Drawer ── */
+  .module-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 54px;
+    padding: 8px 12px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+
+  .module-menu-button {
+    display: inline-grid;
+    place-items: center;
+    position: relative;
+    z-index: 301;
+    min-width: 42px;
+    min-height: 42px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .module-top-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: auto;
+    margin-left: auto;
+    z-index: 299;
+  }
+
+  .module-date-button,
+  .module-notify-button {
+    min-width: 42px;
+    min-height: 42px;
+  }
+
+  /* Module Sidebar Drawer */
+  .module-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 250;
+    width: min(290px, 85vw);
+    height: 100dvh;
+    height: 100vh;
+    padding: 16px 14px;
+    align-items: stretch !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translate3d(-110%, 0, 0);
+    visibility: hidden;
+    pointer-events: none !important;
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), visibility 220ms ease;
+    background: linear-gradient(180deg, #071a38 0%, #06142b 100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+  }
+
+  html[data-module-sidebar='open'] .module-sidebar,
+  .module-shell-sidebar-open .module-sidebar,
+  .module-shell[data-sidebar-open='true'] .module-sidebar,
+  .module-sidebar[data-open='true'] {
+    transform: translate3d(0, 0, 0);
+    visibility: visible;
+    pointer-events: auto !important;
+  }
+
+  .module-sidebar-brand strong,
+  .module-side-nav span,
+  .module-user-card div,
+  .module-user-card > svg {
+    display: block !important;
+  }
+
+  .module-sidebar-brand {
+    justify-content: flex-start !important;
+    padding: 0 10px !important;
+  }
+
+  .module-side-nav a,
+  .module-shell-collapsed .module-side-nav a {
+    justify-content: flex-start !important;
+    padding: 0 14px !important;
+    min-height: 46px;
+    font-size: 14px;
+  }
+
+  .module-user-card {
+    width: 100%;
+    margin-top: 14px;
+    grid-template-columns: 36px 1fr 16px;
+  }
+
+  /* Module Sidebar Backdrop */
+  .module-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 240;
+    display: none;
+    width: 100vw;
+    height: 100vh;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  html[data-module-sidebar='open'] .module-sidebar-backdrop,
+  .module-shell-sidebar-open .module-sidebar-backdrop,
+  .module-shell[data-sidebar-open='true'] .module-sidebar-backdrop {
+    display: block;
+    pointer-events: auto;
+  }
+
+  .module-sidebar-backdrop[hidden] {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  /* Date & Notify bottom-sheet modal on mobile */
+  .module-date-popover-wrap.is-open .module-date-popover,
+  .module-notify-popover-wrap.is-open .module-notify-popover {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    top: auto;
+    width: auto;
+    max-height: min(75dvh, 520px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 260;
+    pointer-events: auto;
+    border-radius: 16px;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2);
+  }
+
+  .module-panel-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 255;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(15, 23, 42, 0.55);
+    touch-action: manipulation;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+
+  /* ── All Grids -> 1 column on Tablet/Mobile ── */
+  .stats-grid,
+  .dashboard-grid,
+  .backup-stat-grid,
+  .backup-action-grid,
+  .backup-create-grid,
+  .backup-restore-grid,
+  .backup-schedule-grid,
+  .backup-detail-grid,
+  .mini-stats,
+  .detail-cards,
+  .toolbar-grid,
+  .form-fields.two-cols,
+  .form-fields.three-cols,
+  .check-list-grid,
+  .settings-columns,
+  .settings-columns.three-cols,
+  .cards-grid,
+  .role-list-grid,
+  .settings-role-grid,
+  .info-grid,
+  .permission-check-grid,
+  .settings-system-fields,
+  .settings-inline-field:not(.field-span-full),
+  .module-stats-grid,
+  .module-summary-grid,
+  .module-stock-grid,
+  .module-reports-grid,
+  .module-donut-row,
+  .module-batch-summary,
+  .module-history-filters,
+  .module-dashboard-grid,
+  .module-batch-form,
+  .module-stock-adjustment-form,
+  .module-stock-transfer-form,
+  .module-medicine-form,
+  .module-inventory-toolbar,
+  .pos-metric-grid,
+  .pos-action-grid,
+  .pos-payment-methods,
+  .pos-invoice-actions,
+  .pos-sale-actions,
+  .pos-payment-actions,
+  .pos-dashboard-grid,
+  .pos-sale-layout,
+  .pos-payment-grid,
+  .pos-discount-grid,
+  .pos-settings-layout,
+  .pos-payment-amount-row,
+  .pos-customer-add-form,
+  .pos-payment-meta-row,
+  .pos-customer-item,
+  .pos-search-result,
+  .report-overview-grid,
+  .report-metric-grid,
+  .report-split-grid,
+  .report-donut-layout,
+  .pos-pm-method-grid,
+  .pos-sale-payment-methods-row,
+  .pos-payment-success-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Headers & Actions ── */
+  .section-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .section-hero-actions,
+  .module-inventory-head-actions,
+  .page-actions {
+    margin-left: 0;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  .page-actions .button,
+  .page-actions a,
+  .module-inventory-head-actions a,
+  .module-inventory-head-actions button,
+  .section-hero-actions a,
+  .section-hero-actions button {
+    flex: 1 1 calc(50% - 8px);
+    min-height: 44px;
+  }
+
+  .settings-brand-row,
+  .backup-action-card,
+  .backup-schedule-card,
+  .section-heading,
+  .progress-row {
+    grid-template-columns: 1fr;
+    display: grid;
+    gap: 10px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  /* ── Tables on Mobile/Tablet ── */
+  .data-table th,
+  .data-table td,
+  .report-table-panel .data-table th,
+  .report-table-panel .data-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .table-panel,
+  .report-table-panel,
+  .pos-table-panel,
+  .module-inventory-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+}
+
+/* ================================================================
+   <= 768px : Mobile Landscape / Large Mobile
+   ================================================================ */
+@media (max-width: 768px) {
+  /* Auth Screen */
+  .login-screen {
+    padding: 24px 16px;
+  }
+
+  .login-card-next {
+    width: 100%;
+    max-width: 440px;
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .auth-brand-panel,
+  .module-login-brand {
+    padding: 28px 18px;
+  }
+
+  .auth-form-panel,
+  .module-login-card {
+    padding: 28px 20px 40px;
+    width: 100%;
+  }
+
+  /* POS specifics */
+  .pos-products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .pos-cart-panel {
+    width: 100%;
+  }
+
+  .pos-summary-card {
+    padding: 16px;
+  }
+
+  /* Inventory */
+  .module-inventory-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .module-inventory-search {
+    width: 100% !important;
+  }
+
+  .module-inventory-search input {
+    width: 100% !important;
+  }
+
+  /* Forms & Modals */
+  .modal-dialog,
+  .pos-modal,
+  .dialog-content {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+    padding: 18px 16px !important;
+  }
+
+  .form-row,
+  .form-section {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .form-actions button,
+  .form-actions a {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .tenant-filters {
+    gap: 4px;
+  }
+
+  .tenant-filters select {
+    font-size: 13px;
+    padding: 0 4px;
+  }
+}
+
+/* ================================================================
+   <= 640px : Standard Mobile Phone (Portrait)
+   ================================================================ */
+@media (max-width: 640px) {
+  /* Topbars */
+  .topbar {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .tenant-filters label span {
+    display: none;
+  }
+
+  .profile-menu strong,
+  .profile-menu span {
+    display: none;
+  }
+
+  .profile-menu {
+    gap: 0;
+  }
+
+  .module-date-button-label {
+    display: none;
+  }
+
+  .module-date-button {
+    padding: 0 10px;
+  }
+
+  /* Page headers & titles */
+  .page-header h1,
+  .section-hero-copy h1,
+  .report-header h1 {
+    font-size: 22px !important;
+    line-height: 1.2;
+  }
+
+  .page-header p,
+  .section-hero-copy p,
+  .report-header p {
+    font-size: 12px !important;
+  }
+
+  /* Action buttons full width */
+  .page-actions .button,
+  .page-actions a,
+  .module-inventory-head-actions a,
+  .module-inventory-head-actions button,
+  .section-hero-actions a,
+  .section-hero-actions button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* Stat & Overview Cards */
+  .report-overview-card {
+    min-height: auto;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .report-overview-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+
+  .report-overview-icon-svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .report-overview-copy h2 {
+    font-size: 18px;
+  }
+
+  .report-overview-copy p {
+    font-size: 13px;
+  }
+
+  .report-metric-card {
+    min-height: auto;
+    padding: 14px 16px;
+  }
+
+  .report-metric-copy strong {
+    font-size: 24px;
+  }
+
+  /* POS screen */
+  .pos-products-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pos-keypad-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px;
+  }
+
+  .pos-keypad-btn {
+    min-height: 50px;
+    font-size: 20px;
+  }
+
+  .pos-cart-item {
+    grid-template-columns: 1fr auto !important;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .pos-cart-item-qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Filter tags / tabs */
+  .tabs,
+  .settings-tabs,
+  .inventory-category-chips,
+  .pos-category-chips {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 6px;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar,
+  .settings-tabs::-webkit-scrollbar,
+  .inventory-category-chips::-webkit-scrollbar,
+  .pos-category-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn,
+  .category-chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  /* Pagination */
+  .pagination-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pagination-info {
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .pagination-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ================================================================
+   <= 480px : Compact Mobile
+   ================================================================ */
+@media (max-width: 480px) {
+  .console-main .content,
+  .module-page-content {
+    padding: 10px 8px 24px;
+  }
+
+  .card,
+  .panel,
+  .pos-panel,
+  .settings-card,
+  .report-table-panel,
+  .report-chart-panel {
+    padding: 14px 12px !important;
+    border-radius: 12px;
+  }
+
+  .topbar-actions {
+    gap: 2px;
+  }
+
+  .topbar-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  /* Form inputs fit nicely */
+  .form-fields input,
+  .form-fields select,
+  .form-fields textarea,
+  .search-box input,
+  .settings-card input,
+  .settings-card select {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: 42px;
+  }
+
+  .button {
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}
+
+/* ================================================================
+   <= 360px : Small Screens
+   ================================================================ */
+@media (max-width: 360px) {
+  .topbar {
+    padding: 4px 6px;
+  }
+
+  .console-topbar-menu-button,
+  .module-menu-button {
+    min-width: 36px;
+    min-height: 36px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .module-date-button,
+  .module-notify-button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .page-header h1,
+  .section-hero-copy h1 {
+    font-size: 19px !important;
+  }
+}
+
+/* ================================================================
+   ACCESSIBILITY & REDUCED MOTION
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .module-sidebar,
+  .module-sidebar-backdrop,
+  .sidebar,
+  .console-sidebar-backdrop,
+  .module-panel-backdrop {
+    transition: none !important;
+  }
+}

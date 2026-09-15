@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next-prod/types/**/*.ts",
+    ".next-prod/dev/types/**/*.ts",
+    ".next-web-dev-13872/types/**/*.ts",
+    ".next-web-dev-13872/dev/types/**/*.ts",
+    ".next-web-dev-9732/types/**/*.ts",
+    ".next-web-dev-9732/dev/types/**/*.ts",
+    ".next-web-dev-2868/types/**/*.ts",
+    ".next-web-dev-2868/dev/types/**/*.ts",
+    ".next-web-dev-14536/types/**/*.ts",
+    ".next-web-dev-14536/dev/types/**/*.ts",
+    ".next-web-dev-16968/types/**/*.ts",
+    ".next-web-dev-16968/dev/types/**/*.ts",
+    ".next-web-dev-6748/types/**/*.ts",
+    ".next-web-dev-6748/dev/types/**/*.ts",
+    ".next-web-dev-18964/types/**/*.ts",
+    ".next-web-dev-18964/dev/types/**/*.ts",
+    ".next-web-dev-37808/types/**/*.ts",
+    ".next-web-dev-37808/dev/types/**/*.ts",
+    ".next-web-dev-41564/types/**/*.ts",
+    ".next-web-dev-41564/dev/types/**/*.ts",
+    ".next-web-dev-44024/types/**/*.ts",
+    ".next-web-dev-44024/dev/types/**/*.ts",
+    ".next-web-dev-44692/types/**/*.ts",
+    ".next-web-dev-44692/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next-dev",
+    ".next-web-dev*",
+    ".next-prod",
+    ".next-build*"
+  ]
+}

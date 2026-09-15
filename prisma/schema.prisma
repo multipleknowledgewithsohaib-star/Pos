@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Supplier {
+  id          Int      @id @default(autoincrement())
+  name        String
+  contactName String?
+  email       String?  @unique
+  phone       String?
+  address     String?
+  batches     Batch[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+}
+
+model Product {
+  id                   Int       @id @default(autoincrement())
+  sku                  String    @unique
+  barcode              String?   @unique
+  name                 String
+  description          String?
+  strength             String?
+  form                 String?
+  unit                 String    @default("piece")
+  requiresPrescription Boolean   @default(false)
+  reorderLevel         Int       @default(0)
+  categoryId           Int?
+  category             Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  batches              Batch[]
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([name])
+}
+
+model Batch {
+  id              Int              @id @default(autoincrement())
+  batchNumber     String
+  productId       Int
+  supplierId      Int?
+  manufacturedAt  DateTime?
+  expiryDate      DateTime
+  purchasePrice   Decimal
+  sellingPrice    Decimal
+  quantityOnHand  Int              @default(0)
+  receivedAt      DateTime         @default(now())
+  product         Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier        Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  movements       StockMovement[]
+
+  @@unique([productId, batchNumber])
+  @@index([productId])
+  @@index([supplierId])
+  @@index([expiryDate])
+}
+
+enum StockMovementType {
+  RECEIVE
+  DISPENSE
+  ADJUSTMENT
+}
+
+model StockMovement {
+  id           Int               @id @default(autoincrement())
+  batchId      Int
+  movementType StockMovementType
+  quantity     Int
+  reference    String?
+  note         String?
+  createdAt    DateTime          @default(now())
+  batch        Batch             @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([movementType])
+}

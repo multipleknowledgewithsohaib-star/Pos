@@ -1,0 +1,49 @@
+{
+  "name": "pharma-prisma-db",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "dev:web": "node src/web-dev-server.js",
+    "dev:api": "node --watch --env-file=.env src/server.js",
+    "dev:lan": "node scripts/start-lan.mjs",
+    "lan:url": "node scripts/print-lan-url.mjs",
+    "start": "next start -p 4000",
+    "prebuild": "node scripts/vps-fix-structure.mjs",
+    "build": "next build --webpack",
+    "build:turbo": "next build",
+    "start:api": "node --env-file=.env src/server.js",
+    "start:web": "next start --port 3000",
+    "lint": "eslint .",
+    "postinstall": "",
+    "db:generate": "prisma generate",
+    "db:setup": "node scripts/setup-db.mjs",
+    "seed:demo": "node scripts/seed-demo-data.mjs",
+    "verify:batch": "node scripts/verify-batch.mjs",
+    "verify:payment": "node scripts/verify-payment-gateway.mjs",
+    "measure:perf": "node scripts/measure-module-performance.mjs",
+    "build:vps": "node scripts/vps-build.mjs",
+    "fix:vps": "node scripts/vps-fix-structure.mjs",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "express": "^5.2.1",
+    "lucide-react": "^1.14.0",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tesseract.js": "^7.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "prisma": "^6.0.0",
+    "typescript": "^6.0.3"
+  }
+}
