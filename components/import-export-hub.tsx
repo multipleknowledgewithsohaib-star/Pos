@@ -68,7 +68,7 @@ export function ImportExportHub() {
         const batches = batchesPayload.data?.rows ?? [];
 
         const medicineRows = medicines.map((item: Record<string, unknown>) => ({
-          Type: 'Medicine',
+          Type: 'Item',
           'Product Name': item.medicineName,
           Category: item.category,
           Stock: item.stock,

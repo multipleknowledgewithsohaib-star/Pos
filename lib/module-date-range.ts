@@ -5,10 +5,21 @@ export type ModuleDateRange = {
   to: string;
 };
 
-export const DEFAULT_MODULE_DATE_RANGE: ModuleDateRange = {
-  from: '2019-01-01',
-  to: '2019-01-31',
-};
+export function getDefaultMonthRange(): ModuleDateRange {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const from = new Date(year, month, 1);
+  const to = new Date(year, month + 1, 0);
+  const pad = (v: number) => String(v).padStart(2, '0');
+  return {
+    from: `${from.getFullYear()}-${pad(from.getMonth() + 1)}-${pad(from.getDate())}`,
+    to: `${to.getFullYear()}-${pad(to.getMonth() + 1)}-${pad(to.getDate())}`,
+  };
+}
+
+export const DEFAULT_MODULE_DATE_RANGE: ModuleDateRange = getDefaultMonthRange();
+
 
 const monthMap: Record<string, number> = {
   Jan: 0,

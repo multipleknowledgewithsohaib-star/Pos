@@ -25,17 +25,17 @@ export default async function MedicineDetailsPage({ params }: PageProps) {
   return (
     <ModuleShell active="Inventory">
       <InventoryPageHeader
-        title="Medicine Details"
-        subtitle="View and manage medicine information"
+        title="Item Details"
+        subtitle="View and manage item information"
         actions={
           <>
             <Link className="module-page-button" href="/modules/inventory/medicines">
               <ArrowLeft />
-              <span>Back to Medicine</span>
+              <span>Back to Items</span>
             </Link>
             <Link className="module-page-button module-page-button-primary" href={`/modules/inventory/medicines/${medicine.id}/edit`}>
               <PencilLine />
-              <span>Edit Medicine</span>
+              <span>Edit Item</span>
             </Link>
           </>
         }
@@ -45,7 +45,7 @@ export default async function MedicineDetailsPage({ params }: PageProps) {
         <table className="module-detail-table">
           <thead>
             <tr>
-              <th>Medicine Name</th>
+              <th>Item Name</th>
               <th>Generic Name</th>
               <th>Category</th>
               <th>Unit</th>
@@ -96,7 +96,7 @@ export default async function MedicineDetailsPage({ params }: PageProps) {
           <table className="module-detail-table">
             <thead>
               <tr>
-                <th>Medicine Kis Liye Hai / Notes</th>
+                <th>Item Details / Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +109,7 @@ export default async function MedicineDetailsPage({ params }: PageProps) {
       ) : null}
 
       <div className="module-centered-cta" style={{ marginTop: 24 }}>
-        <DeleteRecordButton endpoint={`/api/modules/inventory/${medicine.id}`} label="Delete Medicine" redirectTo="/modules/inventory/medicines" />
+        <DeleteRecordButton endpoint={`/api/modules/inventory/${medicine.id}`} label="Delete Item" redirectTo="/modules/inventory/medicines" />
       </div>
     </ModuleShell>
   );

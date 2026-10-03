@@ -38,7 +38,7 @@ export const importEntityConfigs: ImportEntityConfig[] = [
   {
     id: 'products',
     title: 'Products Import',
-    description: 'Upload medicines/products from Excel template.',
+    description: 'Upload items/products from Excel template.',
     templateFile: 'Products.xlsx',
     icon: Package,
     columns: [
@@ -54,7 +54,7 @@ export const importEntityConfigs: ImportEntityConfig[] = [
     sampleRows: [
       {
         'Product Name': 'Panadol',
-        Category: 'Medicine',
+        Category: 'Item',
         'Purchase Price': 50,
         'Sale Price': 70,
         Stock: 100,

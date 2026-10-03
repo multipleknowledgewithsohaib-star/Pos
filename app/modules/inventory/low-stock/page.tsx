@@ -6,7 +6,7 @@ export default function LowStockPage() {
     <ModuleShell active="Inventory">
       <InventoryPageHeader
         title="Low Stock Items"
-        subtitle="Medicines which are low in stock"
+        subtitle="Items which are low in stock"
       />
       <LowStockTable />
     </ModuleShell>

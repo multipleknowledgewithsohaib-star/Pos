@@ -45,9 +45,21 @@ export function PosDashboardWorkspace() {
 
   const todaySales = useMemo(() => filterSalesForToday(state.completedSales), [state.completedSales]);
   const totalSales = todaySales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalOrders = todaySales.length;
-  const totalItemsSold = todaySales.reduce((sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.qty, 0), 0);
-  const averageOrder = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+  // Dashboard display requirement: Total Orders should remain 0.
+  // Keep the real sales list intact so Recent Transactions, Sales Overview,
+  // Total Sales, and Total Items Sold continue to work normally.
+  const totalOrders = 0;
+
+  const totalItemsSold = todaySales.reduce(
+    (sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.qty, 0),
+    0,
+  );
+
+  // Use the actual number of sales for the average-order calculation so
+  // changing the dashboard display counter to 0 does not change this metric.
+  const actualOrderCount = todaySales.length;
+  const averageOrder = actualOrderCount > 0 ? totalSales / actualOrderCount : 0;
   const recentRows = todaySales.slice(0, 5);
 
   const metrics = useMemo(
@@ -123,7 +135,9 @@ export function PosDashboardWorkspace() {
               })
             ) : (
               <tr>
-                <td className="table-empty-cell" colSpan={7}>No transactions yet.</td>
+                <td className="table-empty-cell" colSpan={7}>
+                  No transactions yet.
+                </td>
               </tr>
             )}
           </tbody>
@@ -204,7 +218,10 @@ function splitSaleDateTime(value: string) {
 }
 
 function parseSaleDate(value: string) {
-  const match = value.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const match = value.match(
+    /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4}),\s*(\d{1,2}):(\d{2})\s*(AM|PM)$/i,
+  );
+
   if (!match) {
     const direct = new Date(value);
     return Number.isNaN(direct.getTime()) ? null : direct;
@@ -223,7 +240,14 @@ function parseSaleDate(value: string) {
     hour = hour === 12 ? 12 : hour + 12;
   }
 
-  const parsed = new Date(Number(year), month, Number(day), hour, Number(minuteValue));
+  const parsed = new Date(
+    Number(year),
+    month,
+    Number(day),
+    hour,
+    Number(minuteValue),
+  );
+
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 

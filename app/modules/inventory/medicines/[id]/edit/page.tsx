@@ -25,8 +25,8 @@ export default async function EditMedicinePage({ params }: PageProps) {
   return (
     <ModuleShell active="Inventory">
       <InventoryPageHeader
-        title="Edit Medicine"
-        subtitle="Update medicine details"
+        title="Edit Item"
+        subtitle="Update item details"
         actions={
           <Link className="module-page-button" href={`/modules/inventory/medicines/${medicine.id}`}>
             <ArrowLeft />
@@ -39,7 +39,7 @@ export default async function EditMedicinePage({ params }: PageProps) {
         medicine={medicine}
         mode="edit"
         redirectTo={`/modules/inventory/medicines/${medicine.id}`}
-        submitLabel="Update Medicine"
+        submitLabel="Update Item"
       />
     </ModuleShell>
   );

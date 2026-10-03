@@ -83,7 +83,7 @@ export function StockAdjustmentFormClient() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selectedMedicine) {
-      setMessage('Medicine select karein.');
+          setMessage('Item select karein.');
       return;
     }
 
@@ -150,11 +150,11 @@ export function StockAdjustmentFormClient() {
   return (
     <form className="module-stock-adjustment-form" onSubmit={handleSubmit}>
       <label className="module-field">
-        <span>Medicine <b>*</b></span>
+        <span>Item <b>*</b></span>
         <div className="module-select-shell">
           <select required value={selectedMedicineId} onChange={(event) => setSelectedMedicineId(event.target.value)}>
             <option disabled value="">
-              Select medicine
+              Select item
             </option>
             {medicines.map((medicine) => (
               <option key={medicine.id} value={medicine.id}>
@@ -256,7 +256,7 @@ export function StockTransferFormClient() {
     const medicine = medicines.find((item) => String(item.id) === medicineId);
 
     if (!medicine || !qty || !fromBranch || !toBranch || fromBranch === toBranch) {
-      setMessage('Valid medicine, quantity, aur different branches select karein.');
+      setMessage('Valid item, quantity, aur different branches select karein.');
       return;
     }
 
@@ -310,10 +310,10 @@ export function StockTransferFormClient() {
       </label>
 
       <label className="module-field">
-        <span>Medicine <b>*</b></span>
+        <span>Item <b>*</b></span>
         <div className="module-select-shell">
           <select defaultValue="" name="medicineId" required>
-            <option disabled value="">Select medicine</option>
+            <option disabled value="">Select item</option>
             {medicines.map((medicine) => (
               <option key={medicine.id} value={medicine.id}>
                 {medicine.medicineName} ({medicine.stock})

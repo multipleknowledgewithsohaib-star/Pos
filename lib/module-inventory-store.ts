@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME, type AuthSession } from './auth-session';
@@ -37,31 +37,83 @@ async function getInitialMedicines(email: string): Promise<Medicine[]> {
 }
 
 let cachedMedicines: Record<string, Medicine[]> = {};
+let fileMutex = Promise.resolve();
 
 export async function readMedicines(): Promise<Medicine[]> {
   const { filepath, email } = await getInventoryFilepathAndEmail();
-  if (cachedMedicines[filepath]) {
-    return cachedMedicines[filepath];
-  }
   const initial = await getInitialMedicines(email);
+
   try {
     const raw = await readFile(filepath, 'utf8');
+    if (!raw.trim()) {
+      // If file is temporarily empty, return cache rather than overwriting
+      if (cachedMedicines[filepath] && cachedMedicines[filepath].length > 0) {
+        return cachedMedicines[filepath];
+      }
+    }
     const parsed = JSON.parse(raw);
-    cachedMedicines[filepath] = Array.isArray(parsed) ? parsed.map(normalizeMedicine) : initial;
-    return cachedMedicines[filepath];
-  } catch {
-    await writeMedicines(initial);
-    cachedMedicines[filepath] = structuredClone(initial);
-    return cachedMedicines[filepath];
+    if (Array.isArray(parsed)) {
+      cachedMedicines[filepath] = parsed.map(normalizeMedicine);
+      return cachedMedicines[filepath];
+    }
+    return initial;
+  } catch (err: unknown) {
+    const isEnoent = (err as { code?: string })?.code === 'ENOENT';
+    if (isEnoent) {
+      // File genuinely does not exist yet -> initialize
+      await writeMedicines(initial);
+      cachedMedicines[filepath] = structuredClone(initial);
+      return cachedMedicines[filepath];
+    }
+
+    // Try reading backup file if main file was corrupted or in mid-write
+    try {
+      const backupRaw = await readFile(`${filepath}.backup`, 'utf8');
+      const backupParsed = JSON.parse(backupRaw);
+      if (Array.isArray(backupParsed) && backupParsed.length > 0) {
+        cachedMedicines[filepath] = backupParsed.map(normalizeMedicine);
+        // Restore main file from backup
+        await writeMedicines(cachedMedicines[filepath]);
+        return cachedMedicines[filepath];
+      }
+    } catch {
+      // Backup read failed as well
+    }
+
+    // DO NOT wipe the file to [] on read/parse error!
+    if (cachedMedicines[filepath] && cachedMedicines[filepath].length > 0) {
+      return cachedMedicines[filepath];
+    }
+    return initial;
   }
 }
 
-export async function writeMedicines(medicines: Medicine[]) {
+export async function writeMedicines(medicines: Medicine[]): Promise<void> {
   const { filepath } = await getInventoryFilepathAndEmail();
   const normalized = medicines.map(normalizeMedicine);
   cachedMedicines[filepath] = normalized;
-  await mkdir(path.dirname(filepath), { recursive: true });
-  await writeFile(filepath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
+
+  // Queue write operations sequentially to prevent race conditions during concurrent sales
+  fileMutex = fileMutex.then(async () => {
+    try {
+      await mkdir(path.dirname(filepath), { recursive: true });
+      const tempPath = `${filepath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+      const payload = `${JSON.stringify(normalized, null, 2)}\n`;
+
+      // 1. Atomic write via temp file + rename
+      await writeFile(tempPath, payload, 'utf8');
+      await rename(tempPath, filepath);
+
+      // 2. Keep an automatic backup copy if we have products
+      if (normalized.length > 0) {
+        await writeFile(`${filepath}.backup`, payload, 'utf8').catch(() => {});
+      }
+    } catch (writeErr) {
+      console.error(`[CRITICAL] writeMedicines error for ${filepath}:`, writeErr);
+    }
+  });
+
+  await fileMutex;
 }
 
 export async function addMedicine(payload: Record<string, unknown>) {

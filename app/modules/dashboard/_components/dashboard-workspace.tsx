@@ -47,7 +47,9 @@ export function DashboardWorkspace({ inventory }: { inventory: DashboardInventor
   const costLookup = useMemo(() => buildCostLookup(inventory.inventoryCosts), [inventory.inventoryCosts]);
 
   const totalSales = visibleSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalOrders = visibleSales.length;
+  // Keep the dashboard order counter at zero.
+  // Sales/transactions can still be shown from the existing POS data.
+  const totalOrders = 0;
   const totalProfit = calculateProfit(visibleSales, costLookup);
   const topItems = buildTopItems(visibleSales);
   const trend = buildSalesTrend(visibleSales, range.from, range.to);
@@ -198,7 +200,7 @@ export function DashboardWorkspace({ inventory }: { inventory: DashboardInventor
             <ModuleDashboardPanelAction
               label="View All"
               links={[
-                { label: 'All Medicines', href: '/modules/inventory/medicines' },
+                { label: 'All Items', href: '/modules/inventory/medicines' },
                 { label: 'Low Stock', href: '/modules/inventory/low-stock' },
                 { label: 'Expiring Soon', href: '/modules/inventory/expiring-soon' },
               ]}

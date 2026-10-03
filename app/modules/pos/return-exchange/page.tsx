@@ -8,7 +8,7 @@ export default function PosReturnExchangePage() {
     <PosPageShell
       badge="15.15"
       title="RETURN & EXCHANGE"
-      description="Process customer medicine returns, replacements & view return vouchers."
+      description="Process customer item returns, replacements & view return vouchers."
       action={
         <>
           <ButtonLink href="/modules/pos/sales-history" icon={History} variant="secondary">

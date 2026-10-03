@@ -67,7 +67,7 @@ export function BatchForm({
   return (
     <form className="module-batch-form" onSubmit={handleSubmit}>
       <div className="module-readonly-card module-full-width">
-        <span>Medicine</span>
+        <span>Item</span>
         <strong>{medicineName}</strong>
       </div>
 
@@ -158,26 +158,34 @@ export function BatchRowActions({ batchNo }: BatchRowActionsProps) {
   const [state, setState] = useState<'idle' | 'deleting' | 'error'>('idle');
 
   async function handleDelete() {
-    const confirmed = window.confirm('Are you sure you want to delete this batch?');
+    const confirmed = window.confirm(`Are you sure you want to delete batch "${batchNo}"?`);
     if (!confirmed) return;
 
     setState('deleting');
 
     try {
-      const response = await fetch(`/api/modules/inventory/batches/${encodeURIComponent(batchNo)}`, {
+      const endpoint = `/api/modules/inventory/batches/${encodeURIComponent(batchNo.trim())}`;
+      const response = await fetch(endpoint, {
         method: 'DELETE',
+        cache: 'no-store',
+        headers: {
+          Accept: 'application/json',
+        },
       });
 
       if (!response.ok) {
         setState('error');
         return;
       }
+
+      // The DELETE route returns { ok: true }.
+      // Refresh the server component so the deleted batch disappears
+      // from the table immediately and stays deleted after a reload.
+      setState('idle');
+      router.refresh();
     } catch {
       setState('error');
-      return;
     }
-
-    router.refresh();
   }
 
   return (
@@ -189,15 +197,29 @@ export function BatchRowActions({ batchNo }: BatchRowActionsProps) {
       >
         <PencilLine />
       </Link>
+
       <button
         className="module-inline-icon module-inline-icon-danger"
         type="button"
         aria-label={`Delete ${batchNo}`}
+        title={`Delete ${batchNo}`}
         disabled={state === 'deleting'}
         onClick={handleDelete}
       >
         <Trash2 />
       </button>
+
+      {state === 'deleting' ? (
+        <span className="module-action-status" aria-live="polite">
+          Deleting...
+        </span>
+      ) : null}
+
+      {state === 'error' ? (
+        <span className="module-action-status module-action-status-error" role="alert">
+          Delete failed
+        </span>
+      ) : null}
     </div>
   );
 }

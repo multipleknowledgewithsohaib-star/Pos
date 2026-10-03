@@ -28,7 +28,7 @@ export function ModuleTopbar({
     {
       id: 'low-stock',
       title: 'Low stock alert',
-      description: 'Open low stock medicines list.',
+      description: 'Open low stock items list.',
       href: '/modules/inventory/low-stock'
     },
     {

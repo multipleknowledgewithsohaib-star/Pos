@@ -6,8 +6,8 @@ export default function AddMedicinePage() {
   return (
     <ModuleShell active="Inventory">
       <InventoryPageHeader
-        title="Add New Medicine"
-        subtitle="Add medicine to inventory"
+        title="Add New Item"
+        subtitle="Add item to inventory"
       />
       <ModuleInventoryForm cancelHref="/modules/inventory/medicines" redirectTo="/modules/inventory/medicines" />
     </ModuleShell>

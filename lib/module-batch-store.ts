@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME, type AuthSession } from './auth-session';
@@ -153,31 +153,73 @@ export async function deleteBatch(batchNo: string) {
 }
 
 let cachedBatchRows: Record<string, BatchRecord[]> = {};
+let batchFileMutex = Promise.resolve();
 
 async function readBatchRows(): Promise<BatchRecord[]> {
   const { filepath, email } = await getBatchFilepathAndEmail();
-  if (cachedBatchRows[filepath]) {
-    return cachedBatchRows[filepath];
-  }
   const initial = await getInitialBatchRows(email);
+
   try {
     const raw = await readFile(filepath, 'utf8');
+    if (!raw.trim()) {
+      if (cachedBatchRows[filepath] && cachedBatchRows[filepath].length > 0) {
+        return cachedBatchRows[filepath];
+      }
+    }
     const parsed = JSON.parse(raw);
-    cachedBatchRows[filepath] = Array.isArray(parsed) ? parsed.map(normalizePersistedBatch) : initial;
-    return cachedBatchRows[filepath];
-  } catch {
-    await writeBatchRows(initial);
-    cachedBatchRows[filepath] = structuredClone(initial);
-    return cachedBatchRows[filepath];
+    if (Array.isArray(parsed)) {
+      cachedBatchRows[filepath] = parsed.map(normalizePersistedBatch);
+      return cachedBatchRows[filepath];
+    }
+    return initial;
+  } catch (err: unknown) {
+    const isEnoent = (err as { code?: string })?.code === 'ENOENT';
+    if (isEnoent) {
+      await writeBatchRows(initial);
+      cachedBatchRows[filepath] = structuredClone(initial);
+      return cachedBatchRows[filepath];
+    }
+
+    try {
+      const backupRaw = await readFile(`${filepath}.backup`, 'utf8');
+      const backupParsed = JSON.parse(backupRaw);
+      if (Array.isArray(backupParsed) && backupParsed.length > 0) {
+        cachedBatchRows[filepath] = backupParsed.map(normalizePersistedBatch);
+        await writeBatchRows(cachedBatchRows[filepath]);
+        return cachedBatchRows[filepath];
+      }
+    } catch {}
+
+    if (cachedBatchRows[filepath] && cachedBatchRows[filepath].length > 0) {
+      return cachedBatchRows[filepath];
+    }
+    return initial;
   }
 }
 
-async function writeBatchRows(rows: BatchRecord[]) {
+async function writeBatchRows(rows: BatchRecord[]): Promise<void> {
   const { filepath } = await getBatchFilepathAndEmail();
   const normalized = rows.map(normalizePersistedBatch);
   cachedBatchRows[filepath] = normalized;
-  await mkdir(path.dirname(filepath), { recursive: true });
-  await writeFile(filepath, `${JSON.stringify(normalized, null, 2)}\n`, 'utf8');
+
+  batchFileMutex = batchFileMutex.then(async () => {
+    try {
+      await mkdir(path.dirname(filepath), { recursive: true });
+      const tempPath = `${filepath}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 6)}`;
+      const payload = `${JSON.stringify(normalized, null, 2)}\n`;
+
+      await writeFile(tempPath, payload, 'utf8');
+      await rename(tempPath, filepath);
+
+      if (normalized.length > 0) {
+        await writeFile(`${filepath}.backup`, payload, 'utf8').catch(() => {});
+      }
+    } catch (writeErr) {
+      console.error(`[CRITICAL] writeBatchRows error for ${filepath}:`, writeErr);
+    }
+  });
+
+  await batchFileMutex;
 }
 
 function seedBatchRows(): BatchRecord[] {

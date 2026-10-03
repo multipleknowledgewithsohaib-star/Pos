@@ -10,6 +10,12 @@ export type ParsedPurchaseOcr = {
   expectedDate: string;
   paymentMethod: PurchasePaymentMethod;
   notes: string;
+  subtotal?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  totalAmount?: number;
+  isBlurry?: boolean;
+  blurWarning?: string;
   items: PurchaseLineItem[];
   confidence: number;
   warnings: string[];
@@ -114,6 +120,14 @@ export function parsePurchaseOcrText(rawText: string): ParsedPurchaseOcr {
     expiriesDetected,
   });
 
+  const subtotalMatch = text.match(/(?:sub\s*total|gross\s*amount|items\s*total)\s*[:=]?\s*(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d+)?)/i);
+  const taxMatch = text.match(/(?:adv(?:ance)?\s*tax(?:(?:\s*u\/s\s*236[hH]?)|\s*\([^)]*\))?|tax\s*u\/s\s*236[hH]?|sales\s*tax|gst)\s*[:=]?\s*(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d+)?)/i);
+  const totalMatch = text.match(/(?:total\s*amount|grand\s*total|net\s*amount|total\s*payable|amount\s*due)\s*[:=]?\s*(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d+)?)/i);
+
+  const subtotal = subtotalMatch ? Number(subtotalMatch[1].replace(/,/g, '')) : undefined;
+  const taxAmount = taxMatch ? Number(taxMatch[1].replace(/,/g, '')) : undefined;
+  const totalAmount = totalMatch ? Number(totalMatch[1].replace(/,/g, '')) : undefined;
+
   return {
     rawText: text,
     supplierName,
@@ -124,6 +138,9 @@ export function parsePurchaseOcrText(rawText: string): ParsedPurchaseOcr {
     expectedDate,
     paymentMethod,
     notes,
+    subtotal,
+    taxAmount,
+    totalAmount,
     items,
     confidence,
     warnings,
@@ -746,6 +763,11 @@ export type StructuredPurchaseOcr = {
   expectedDate?: string;
   paymentMethod?: PurchasePaymentMethod | string;
   notes?: string;
+  subtotal?: number;
+  taxAmount?: number;
+  totalAmount?: number;
+  isBlurry?: boolean;
+  blurWarning?: string;
   items?: Array<{
     itemCode?: string;
     medicine?: string;
@@ -810,6 +832,11 @@ export function parsedPurchaseFromStructured(input: StructuredPurchaseOcr, fallb
     paymentMethod,
     notes,
     items: mergedItems,
+    subtotal: input.subtotal ?? fromText.subtotal,
+    taxAmount: input.taxAmount ?? fromText.taxAmount,
+    totalAmount: input.totalAmount ?? fromText.totalAmount,
+    isBlurry: input.isBlurry ?? fromText.isBlurry,
+    blurWarning: input.blurWarning ?? fromText.blurWarning,
     confidence: Math.max(fromText.confidence, items.length ? 0.92 : 0.55),
     warnings: Array.from(new Set(warnings)),
     expiriesDetected,

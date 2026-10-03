@@ -35,12 +35,12 @@ import {
 import { readAuthSession } from '@/lib/auth-session';
 
 function getPurchaseStorageKey(): string {
-  if (typeof window === 'undefined') return 'pharma-purchase-state-v4';
+  if (typeof window === 'undefined') return 'pharma-purchase-state-v6';
   const session = readAuthSession();
   const emailSlug = session?.email
     ? `-${session.email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
     : '';
-  return `pharma-purchase-state-v4${emailSlug}`;
+  return `pharma-purchase-state-v6${emailSlug}`;
 }
 
 export type PurchaseState = {
@@ -77,6 +77,7 @@ type PurchaseContextValue = {
   state: PurchaseState;
   draftTotals: {
     subtotal: number;
+    taxAmount: number;
     discountTotal: number;
     total: number;
     itemCount: number;
@@ -451,6 +452,10 @@ function buildOrderFromDraft(state: PurchaseState) {
     .map((item) => normalizeLineItem(item))
     .filter((item): item is PurchaseLineItem => Boolean(item && item.medicine.trim() && item.qty > 0));
   const totals = calculateOrderTotals(items);
+  const tax = roundMoney(draft.taxAmount ?? 0);
+  const finalTotal = draft.totalAmount && draft.totalAmount > 0
+    ? roundMoney(draft.totalAmount)
+    : roundMoney(totals.total + tax);
   const now = new Date().toISOString();
 
   return {
@@ -471,9 +476,10 @@ function buildOrderFromDraft(state: PurchaseState) {
       notes: draft.notes,
       source: draft.source,
       items,
-      subtotal: totals.subtotal,
+      subtotal: draft.subtotal ?? totals.subtotal,
+      taxTotal: tax,
       discountTotal: totals.discountTotal,
-      total: totals.total,
+      total: finalTotal,
       createdAt: existingOrder?.createdAt ?? now,
       updatedAt: now,
       receivedAt: existingOrder?.receivedAt,
@@ -593,6 +599,9 @@ function reducer(state: PurchaseState, action: PurchaseAction): PurchaseState {
           expectedDate: action.order.expectedDate,
           paymentMethod: action.order.paymentMethod,
           notes: action.order.notes,
+          subtotal: action.order.subtotal,
+          taxAmount: action.order.taxTotal,
+          totalAmount: action.order.total,
           items: action.order.items.map((item) => ({
             ...item,
             id: item.id || makeLineId('draft'),
@@ -713,13 +722,19 @@ export function PurchaseProvider({ children }: { children: ReactNode }) {
   const draftTotals = useMemo(() => {
     const items = state.draft.items.filter((item) => item.medicine.trim());
     const totals = calculateOrderTotals(items);
+    const tax = roundMoney(state.draft.taxAmount ?? 0);
+    const finalTotal = state.draft.totalAmount && state.draft.totalAmount > 0
+      ? roundMoney(state.draft.totalAmount)
+      : roundMoney(totals.total + tax);
+
     return {
-      subtotal: totals.subtotal,
+      subtotal: state.draft.subtotal ?? totals.subtotal,
+      taxAmount: tax,
       discountTotal: totals.discountTotal,
-      total: totals.total,
+      total: finalTotal,
       itemCount: state.draft.items.length,
     };
-  }, [state.draft.items]);
+  }, [state.draft.items, state.draft.totalAmount, state.draft.taxAmount, state.draft.subtotal]);
 
   const value: PurchaseContextValue = {
     state,

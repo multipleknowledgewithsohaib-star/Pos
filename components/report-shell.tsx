@@ -16,7 +16,7 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   defaultReportRange,
   inventoryBreakdown,
@@ -43,9 +43,11 @@ import {
 } from '@/lib/report-data';
 import {
   formatModuleDateRangeLabel,
+  getDefaultMonthRange,
   normalizeModuleDateRange,
   type ModuleDateRange,
 } from '@/lib/module-date-range';
+import { getCompletedSalesForReports, type PosSaleRecord } from '@/lib/pos-state';
 
 type ReportTone = 'purple' | 'green' | 'red' | 'blue' | 'orange';
 type BadgeTone = 'green' | 'orange' | 'red' | 'blue' | 'purple';
@@ -132,7 +134,11 @@ function formatInteger(value: number) {
 
 function toTimestamp(value?: string) {
   if (!value) return null;
-  const timestamp = new Date(`${value}T00:00:00`).getTime();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const timestamp = new Date(`${value}T00:00:00`).getTime();
+    return Number.isNaN(timestamp) ? null : timestamp;
+  }
+  const timestamp = new Date(value).getTime();
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
@@ -749,14 +755,77 @@ function OverviewView({ range, setRange }: Pick<SharedProps, 'range' | 'setRange
 }
 
 function SalesView(props: SharedProps) {
+  const [completedSales, setCompletedSales] = useState<PosSaleRecord[]>([]);
+
+  useEffect(() => {
+    const local = getCompletedSalesForReports();
+    if (local.length > 0) setCompletedSales(local);
+
+    fetch('/api/modules/pos/sales', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json?.data) && json.data.length > 0) {
+          setCompletedSales(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+
+  const dynamicSalesRows = useMemo(() => {
+    if (!completedSales.length) return salesReportRows;
+    const itemMap = new Map<string, { quantitySold: number; totalSales: number; profit: number; date: string }>();
+
+    completedSales.forEach((sale) => {
+      const saleDate = sale.createdAt ? new Date(sale.createdAt).toISOString().split('T')[0] : '';
+      sale.items.forEach((item) => {
+        const key = item.name.trim();
+        const prev = itemMap.get(key) || { quantitySold: 0, totalSales: 0, profit: 0, date: saleDate };
+        const lineTotal = item.price * item.qty - (item.lineDiscount || 0);
+        const estProfit = Math.round(lineTotal * 0.22);
+        itemMap.set(key, {
+          quantitySold: prev.quantitySold + item.qty,
+          totalSales: prev.totalSales + lineTotal,
+          profit: prev.profit + estProfit,
+          date: saleDate || prev.date,
+        });
+      });
+    });
+
+    return Array.from(itemMap.entries())
+      .sort((a, b) => b[1].totalSales - a[1].totalSales)
+      .map(([medicine, data], idx) => ({
+        rank: idx + 1,
+        medicine,
+        quantitySold: data.quantitySold,
+        totalSales: data.totalSales,
+        profit: data.profit,
+        date: data.date,
+      }));
+  }, [completedSales]);
+
   const rows = useMemo(
-    () => filterRows(salesReportRows, props.range, props.search, props.status),
-    [props.range, props.search, props.status],
+    () => filterRows(dynamicSalesRows, props.range, props.search, props.status),
+    [dynamicSalesRows, props.range, props.search, props.status],
   );
-  const visibleTrend = useMemo(() => filterTrendPoints(salesTrend, props.range), [props.range]);
+
+  const dynamicTrend = useMemo(() => {
+    if (!completedSales.length) return filterTrendPoints(salesTrend, props.range);
+    const dayMap = new Map<string, number>();
+    completedSales.forEach((sale) => {
+      const d = sale.createdAt ? new Date(sale.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Today';
+      dayMap.set(d, (dayMap.get(d) || 0) + (sale.total || 0));
+    });
+    return Array.from(dayMap.entries()).map(([label, value]) => ({
+      date: new Date().toISOString().split('T')[0],
+      label,
+      value,
+    }));
+  }, [completedSales, props.range]);
+
   const totalSales = rows.reduce((sum, row) => sum + row.totalSales, 0);
   const totalProfit = rows.reduce((sum, row) => sum + row.profit, 0);
-  const totalOrders = 0;
+  const totalOrders = completedSales.length;
   const averageOrderValue = totalOrders ? totalSales / totalOrders : 0;
 
   return (
@@ -775,7 +844,7 @@ function SalesView(props: SharedProps) {
               props.setSearch(search);
               props.setStatus(status);
             }}
-            placeholder="Search medicines or customers..."
+            placeholder="Search items or customers..."
           />
         </div>
       </div>
@@ -789,19 +858,19 @@ function SalesView(props: SharedProps) {
         ]}
       />
 
-      <LineChartPanel title="Sales Overview" points={visibleTrend} color="#1d5bd6" />
+      <LineChartPanel title="Sales Overview" points={dynamicTrend} color="#1d5bd6" />
 
       <section className="table-panel report-table-panel">
         <div className="section-heading">
           <div>
-            <h2>Top Selling Medicines</h2>
+            <h2>Top Selling Items</h2>
           </div>
         </div>
         <table className="data-table report-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Quantity Sold</th>
               <th>Total Sales (PKR)</th>
               <th>Profit (PKR)</th>
@@ -854,7 +923,7 @@ function PurchaseView(props: SharedProps) {
               props.setSearch(search);
               props.setStatus(status);
             }}
-            placeholder="Search medicines..."
+            placeholder="Search items..."
           />
         </div>
       </div>
@@ -880,7 +949,7 @@ function PurchaseView(props: SharedProps) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Quantity</th>
               <th>Total Purchase (PKR)</th>
             </tr>
@@ -905,13 +974,58 @@ function PurchaseView(props: SharedProps) {
 }
 
 function InventoryView(props: SharedProps) {
+  const [medicines, setMedicines] = useState<Array<{ id: number; medicineName: string; stock: number; price: number; lowStock: number; unit?: string; sku?: string }>>([]);
+
+  useEffect(() => {
+    fetch('/api/modules/inventory?limit=100', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json?.data)) {
+          setMedicines(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const dynamicInventoryRows = useMemo(() => {
+    if (!medicines.length) return inventoryReportRows;
+    return medicines.map((m, idx) => ({
+      date: new Date().toISOString().split('T')[0],
+      rank: idx + 1,
+      medicine: m.medicineName,
+      batchNo: m.sku || `BATCH-${String(m.id).padStart(3, '0')}`,
+      stock: m.stock,
+      unit: m.unit || 'Bottle',
+      value: (m.stock || 0) * (m.price || 0),
+      status: (m.stock <= 0 ? 'Out of Stock' : m.stock <= (m.lowStock || 5) ? 'Low Stock' : 'Normal Stock') as 'Normal Stock' | 'Low Stock' | 'Out of Stock' | 'Expiring Soon',
+    }));
+  }, [medicines]);
+
   const rows = useMemo(
-    () => filterRows(inventoryReportRows, props.range, props.search, props.status),
-    [props.range, props.search, props.status],
+    () => filterRows(dynamicInventoryRows, props.range, props.search, props.status),
+    [dynamicInventoryRows, props.range, props.search, props.status],
   );
 
-  const totals = inventorySummary;
-  const visibleSegments = inventoryBreakdown;
+  const totals = useMemo(() => {
+    if (!medicines.length) return inventorySummary;
+    const totalItems = medicines.length;
+    const totalStockValue = medicines.reduce((sum, m) => sum + (m.stock || 0) * (m.price || 0), 0);
+    const lowStockItems = medicines.filter((m) => m.stock > 0 && m.stock <= (m.lowStock || 5)).length;
+    const outOfStockItems = medicines.filter((m) => m.stock <= 0).length;
+    return { totalItems, totalStockValue, lowStockItems, outOfStockItems };
+  }, [medicines]);
+
+  const visibleSegments = useMemo(() => {
+    if (!medicines.length) return inventoryBreakdown;
+    const normal = medicines.filter((m) => m.stock > (m.lowStock || 5)).length;
+    const low = totals.lowStockItems;
+    const out = totals.outOfStockItems;
+    return [
+      { label: 'Normal Stock', value: normal, tone: 'green' as const },
+      { label: 'Low Stock', value: low, tone: 'orange' as const },
+      { label: 'Out of Stock', value: out, tone: 'red' as const },
+    ];
+  }, [medicines, totals]);
 
   return (
     <div className="report-shell">
@@ -929,7 +1043,7 @@ function InventoryView(props: SharedProps) {
               props.setSearch(search);
               props.setStatus(status);
             }}
-            placeholder="Search medicine or batch..."
+            placeholder="Search item or batch..."
           />
         </div>
       </div>
@@ -955,7 +1069,7 @@ function InventoryView(props: SharedProps) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Batch No.</th>
               <th>Stock</th>
               <th>Unit</th>
@@ -996,7 +1110,7 @@ function ExpiryView(props: SharedProps) {
       <div className="page-header report-header">
         <div>
           <h1>Expiry Report</h1>
-          <p>Medicines near expiry and expired.</p>
+          <p>Items near expiry and expired.</p>
         </div>
         <div className="report-header-actions">
           <FilterButton
@@ -1007,7 +1121,7 @@ function ExpiryView(props: SharedProps) {
               props.setSearch(search);
               props.setStatus(status);
             }}
-            placeholder="Search medicine or batch..."
+            placeholder="Search item or batch..."
           />
         </div>
       </div>
@@ -1033,7 +1147,7 @@ function ExpiryView(props: SharedProps) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Batch No.</th>
               <th>Expiry Date</th>
               <th>Days Left</th>
@@ -1066,10 +1180,55 @@ function ExpiryView(props: SharedProps) {
 }
 
 function ProfitLossView(props: SharedProps) {
+  const [completedSales, setCompletedSales] = useState<PosSaleRecord[]>([]);
+
+  useEffect(() => {
+    const local = getCompletedSalesForReports();
+    if (local.length > 0) setCompletedSales(local);
+
+    fetch('/api/modules/pos/sales', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json?.data) && json.data.length > 0) {
+          setCompletedSales(json.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+
+  const totalRevenue = useMemo(() => {
+    return completedSales.reduce((sum, s) => sum + (s.total || 0), 0);
+  }, [completedSales]);
+
+  const cogs = Math.round(totalRevenue * 0.78);
+  const grossProfit = totalRevenue - cogs;
+  const margin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+
+  const dynamicSummaryRows = useMemo(() => {
+    if (!totalRevenue) return profitLossSummaryRows;
+    const today = new Date().toISOString().split('T')[0];
+    return [
+      { date: today, label: 'Total Revenue (Sales)', amount: totalRevenue, emphasis: 'positive' as const },
+      { date: today, label: 'Cost of Goods Sold (COGS)', amount: -cogs, emphasis: 'negative' as const },
+      { date: today, label: 'Gross Profit', amount: grossProfit, emphasis: 'positive' as const },
+      { date: today, label: 'Net Profit', amount: grossProfit, emphasis: 'positive' as const },
+    ];
+  }, [totalRevenue, cogs, grossProfit]);
+
   const rows = useMemo(
-    () => filterRows(profitLossSummaryRows, props.range, props.search, props.status),
-    [props.range, props.search, props.status],
+    () => filterRows(dynamicSummaryRows, props.range, props.search, props.status),
+    [dynamicSummaryRows, props.range, props.search, props.status],
   );
+
+  const dynamicBreakdown = useMemo(() => {
+    if (!totalRevenue) return profitLossBreakdown;
+    return [
+      { label: 'Revenue', value: totalRevenue, tone: 'green' as const },
+      { label: 'Cost', value: cogs, tone: 'red' as const },
+      { label: 'Profit', value: grossProfit, tone: 'blue' as const },
+    ];
+  }, [totalRevenue, cogs, grossProfit]);
 
   return (
     <div className="report-shell">
@@ -1120,8 +1279,8 @@ function ProfitLossView(props: SharedProps) {
 
         <DonutPanel
           title="Profit Overview"
-          segments={profitLossBreakdown}
-          centerValue={`${profitLossMargin.toFixed(2)}%`}
+          segments={dynamicBreakdown}
+          centerValue={`${margin.toFixed(2)}%`}
           centerLabel="Net Profit Margin"
           showLegend={false}
           variant="profit"
@@ -1390,9 +1549,13 @@ function PaymentView(props: SharedProps) {
 }
 
 export function ReportShell({ report }: { report?: ReportKey }) {
-  const [range, setRange] = useState<ModuleDateRange>(defaultReportRange);
+  const [range, setRange] = useState<ModuleDateRange>(() => getDefaultMonthRange());
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
+
+  useEffect(() => {
+    setRange(getDefaultMonthRange());
+  }, []);
 
   if (!report) {
     return <OverviewView range={range} setRange={setRange} />;

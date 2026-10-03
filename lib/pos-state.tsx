@@ -22,16 +22,49 @@ import {
 } from '@/lib/pos-payment-gateway';
 
 /** Returns a localStorage key unique to the currently logged-in user. */
-function getPosStorageKey(): string {
-  if (typeof window === 'undefined') return 'pharma-pos-state-v8';
+export function getPosStorageKey(): string {
+  if (typeof window === 'undefined') return 'pharma-pos-state-v10';
   const session = readAuthSession();
   const emailSlug = session?.email
     ? `-${session.email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
     : '';
-  return `pharma-pos-state-v8${emailSlug}`;
+  return `pharma-pos-state-v10${emailSlug}`;
+}
+
+export function getCompletedSalesForReports(): PosSaleRecord[] {
+  if (typeof window === 'undefined') return [];
+  const session = readAuthSession();
+  const emailSlug = session?.email
+    ? `-${session.email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
+    : '';
+  const candidateKeys = [
+    `pharma-pos-state-v10${emailSlug}`,
+    `pharma-pos-state-v9${emailSlug}`,
+    `pharma-pos-state-v8${emailSlug}`,
+    `pharma-pos-state-v7${emailSlug}`,
+    'pharma-pos-state-v10',
+    'pharma-pos-state-v9',
+    'pharma-pos-state-v8',
+    'pharma-pos-state-v7',
+  ];
+
+  for (const key of candidateKeys) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed?.completedSales) && parsed.completedSales.length > 0) {
+          return parsed.completedSales;
+        }
+      }
+    } catch {}
+  }
+  return [];
 }
 
 const POS_LEGACY_STORAGE_KEYS = [
+  'pharma-pos-state-v9',
+  'pharma-pos-state-v8',
   'pharma-pos-state-v7',
   'pharma-pos-state-v6',
   'pharma-pos-state-v5',
@@ -192,7 +225,9 @@ type PosAction =
     }
   | { type: 'complete_sale' }
   | { type: 'process_return_exchange'; record: PosReturnExchangeRecord }
-  | { type: 'set_last_return_exchange'; record: PosReturnExchangeRecord | null };
+  | { type: 'set_last_return_exchange'; record: PosReturnExchangeRecord | null }
+  | { type: 'merge_server_sales'; sales: PosSaleRecord[] };
+
 
 type PosContextValue = {
   state: PosState;
@@ -1033,7 +1068,32 @@ function loadPersistedState(): PosState | null {
     return current;
   }
 
-  removeKnownLegacyStorageKeys();
+  // Check possible legacy keys for this user
+  const session = readAuthSession();
+  const emailSlug = session?.email
+    ? `-${session.email.replace(/[^a-z0-9]/gi, '-').toLowerCase()}`
+    : '';
+  const candidateKeys = [
+    `pharma-pos-state-v10${emailSlug}`,
+    `pharma-pos-state-v9${emailSlug}`,
+    `pharma-pos-state-v8${emailSlug}`,
+    `pharma-pos-state-v7${emailSlug}`,
+    'pharma-pos-state-v10',
+    'pharma-pos-state-v9',
+    'pharma-pos-state-v8',
+    'pharma-pos-state-v7',
+  ];
+
+  for (const key of candidateKeys) {
+    const legacy = loadStateFromStorageKey(key);
+    if (legacy && (legacy.completedSales.length > 0 || legacy.cart.length > 0)) {
+      try {
+        window.localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(legacy));
+      } catch {}
+      return legacy;
+    }
+  }
+
   return null;
 }
 
@@ -1601,6 +1661,16 @@ function reducer(state: PosState, action: PosAction): PosState {
         lastReturnExchange: action.record,
       };
     }
+    case 'merge_server_sales': {
+      if (!action.sales || action.sales.length === 0) return state;
+      const merged = mergeSaleRecords(state.completedSales, action.sales);
+      return {
+        ...state,
+        completedSales: merged,
+        lastCompletedSale: state.lastCompletedSale ?? merged[0] ?? null,
+        nextInvoiceNumber: Math.max(state.nextInvoiceNumber, nextInvoiceNumberFromSales(merged)),
+      };
+    }
     default:
       return state;
   }
@@ -1624,7 +1694,33 @@ export function PosProvider({ children }: { children: ReactNode }) {
     }
     hydratedRef.current = true;
     forceRender();
+
+    // Central server sales sync across all devices / browsers
+    fetch('/api/modules/pos/sales', { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((json) => {
+        const serverSales = Array.isArray(json?.data) ? (json.data as PosSaleRecord[]) : [];
+        if (serverSales.length > 0) {
+          dispatch({ type: 'merge_server_sales', sales: serverSales });
+        }
+        // If client had local sales not yet present on server, sync them up
+        if (persisted && Array.isArray(persisted.completedSales) && persisted.completedSales.length > 0) {
+          const serverInvoices = new Set(serverSales.map((s) => s.invoice));
+          const unsynced = persisted.completedSales.filter(
+            (s) => !serverInvoices.has(s.invoice) && !s.id.startsWith('seed')
+          );
+          if (unsynced.length > 0) {
+            fetch('/api/modules/pos/sales', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(unsynced),
+            }).catch(() => {});
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
+
 
   useEffect(() => {
     if (!hydratedRef.current || typeof window === 'undefined') {

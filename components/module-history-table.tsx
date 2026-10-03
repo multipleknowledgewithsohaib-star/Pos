@@ -123,7 +123,7 @@ export function InventoryHistoryTableClient({ items }: { items: ModuleHistoryIte
             <tr>
               <th>Date &amp; Time</th>
               <th>Activity Type</th>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Batch No.</th>
               <th>Quantity</th>
               <th>User</th>

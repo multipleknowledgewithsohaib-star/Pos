@@ -26,11 +26,13 @@ export type PosTone = 'green' | 'blue' | 'purple' | 'orange' | 'red' | 'sky';
 export type PosReturnReason =
   | 'Defective / Damaged'
   | 'Expired Medicine'
+  | 'Expired Item'
   | 'Wrong Item / Customer Mind Change'
   | 'Doctor Prescription Changed'
   | 'Adverse / Allergic Reaction'
   | 'Excess Quantity'
   | 'Other';
+
 
 export type PosReturnItem = {
   medicineId: number | null;

@@ -1142,3 +1142,78 @@ button {
     transition: none !important;
   }
 }
+
+/* ================================================================
+   PERFORMANCE — Prevent lag with many products / big tables
+   ================================================================ */
+
+/* Contain layout/paint for heavy POS panels */
+.pos-table-panel,
+.pos-panel,
+.pos-stack,
+.pos-sale-layout {
+  contain: layout style;
+}
+
+/* Each table row gets its own compositing layer hint */
+.data-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-height: 52px;
+}
+
+/* Inventory tables too */
+.module-inventory-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-height: 52px;
+}
+
+/* Search dropdown — scroll-contained, GPU-accelerated */
+.pos-search-dropdown {
+  overflow-y: auto;
+  max-height: 320px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* POS table scroll — hardware accelerated */
+.pos-table-panel {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+}
+
+/* POS module main area */
+.module-main {
+  will-change: scroll-position;
+}
+
+/* Sidebar transition: GPU layer */
+.module-sidebar,
+.sidebar {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Search results: fast rendering */
+.pos-search-result {
+  contain: layout style;
+}
+
+/* Customer list items */
+.pos-customer-item {
+  contain: layout style;
+}
+
+/* All panels: prevent unnecessary reflows */
+.panel,
+.pos-panel,
+.module-panel,
+.import-export-card,
+.report-overview-card,
+.report-metric-card,
+.settings-card,
+.card {
+  contain: layout style;
+}

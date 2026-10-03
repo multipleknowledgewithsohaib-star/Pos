@@ -83,6 +83,7 @@ export type PurchaseOrder = {
   items: PurchaseLineItem[];
   subtotal: number;
   discountTotal: number;
+  taxTotal?: number;
   total: number;
   createdAt: string;
   updatedAt: string;
@@ -132,7 +133,11 @@ export type PurchaseDraft = {
   ocrText: string;
   ocrFileName: string;
   ocrConfidence: number;
+  subtotal?: number;
+  taxAmount?: number;
+  totalAmount?: number;
 };
+
 
 export type PurchaseQuickAction = {
   title: string;

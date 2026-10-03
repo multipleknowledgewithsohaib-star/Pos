@@ -117,17 +117,20 @@ export function ModuleLogin() {
         </form>
 
         <div className="module-login-quick" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a className="module-login-quick-button" href="/api/demo-login?role=admin" style={{ flex: '1 1 45%', fontSize: '0.8rem', padding: '0.5rem' }}>
+          <a className="module-login-quick-button" href="/api/demo-login?role=admin" style={{ flex: '1 1 30%', fontSize: '0.8rem', padding: '0.5rem' }}>
             Login as Admin
+          </a>
+          <a className="module-login-quick-button" href="/api/demo-login?role=customer" style={{ flex: '1 1 30%', fontSize: '0.8rem', padding: '0.5rem' }}>
+            Login as Customer
+          </a>
+          <a className="module-login-quick-button" href="/api/demo-login?role=inventory" style={{ flex: '1 1 30%', fontSize: '0.8rem', padding: '0.5rem' }}>
+            Login as Inventory
           </a>
           <a className="module-login-quick-button" href="/api/demo-login?role=manager" style={{ flex: '1 1 45%', fontSize: '0.8rem', padding: '0.5rem' }}>
             Login as Manager
           </a>
           <a className="module-login-quick-button" href="/api/demo-login?role=salesman" style={{ flex: '1 1 45%', fontSize: '0.8rem', padding: '0.5rem' }}>
             Login as Salesman
-          </a>
-          <a className="module-login-quick-button" href="/api/demo-login?role=inventory" style={{ flex: '1 1 45%', fontSize: '0.8rem', padding: '0.5rem' }}>
-            Login as Inventory
           </a>
         </div>
 
@@ -137,12 +140,15 @@ export function ModuleLogin() {
         <div className="module-demo-copy" style={{ textAlign: 'left', fontSize: '0.85rem' }}>
           <strong>Admin:</strong> {DEMO_CREDENTIALS.admin.email} / {DEMO_CREDENTIALS.admin.password}
           <br />
+          <strong>Customer:</strong> {DEMO_CREDENTIALS.customer.email} / {DEMO_CREDENTIALS.customer.password}
+          <br />
+          <strong>Inventory:</strong> {DEMO_CREDENTIALS.inventory.email} / {DEMO_CREDENTIALS.inventory.password}
+          <br />
           <strong>Manager:</strong> {DEMO_CREDENTIALS.manager.email} / {DEMO_CREDENTIALS.manager.password}
           <br />
           <strong>Salesman:</strong> {DEMO_CREDENTIALS.salesman.email} / {DEMO_CREDENTIALS.salesman.password}
-          <br />
-          <strong>Inventory:</strong> {DEMO_CREDENTIALS.inventory.email} / {DEMO_CREDENTIALS.inventory.password}
         </div>
+
       </section>
     </main>
   );

@@ -91,14 +91,14 @@ export function CustomerManagementWorkspace() {
 
   return (
     <>
-      <section className="module-stats-grid">
+      <section className="module-stats-grid customer-responsive-stats">
         <StatCard icon={UsersRound} label="Total Customers" tone="purple" value={stats.total} />
         <StatCard icon={Phone} label="With Phone" tone="green" value={stats.withPhone} />
         <StatCard icon={MapPin} label="With Address" tone="blue" value={stats.withAddress} />
         <StatCard icon={NotebookPen} label="With Notes" tone="orange" value={stats.withNotes} />
       </section>
 
-      <div className="backup-create-grid">
+      <div className="backup-create-grid customer-responsive-layout">
         <section className="section-panel backup-create-form">
           <div className="settings-heading">
             <div>
@@ -171,8 +171,8 @@ export function CustomerManagementWorkspace() {
             </div>
           </div>
 
-          <div className="section-hero-inline-actions" style={{ justifyContent: 'flex-start' }}>
-            <label className="search-box">
+          <div className="section-hero-inline-actions customer-responsive-actions" style={{ justifyContent: 'flex-start' }}>
+            <label className="search-box customer-responsive-search">
               <Search className="button-icon" />
               <input
                 aria-label="Search customers"
@@ -184,9 +184,35 @@ export function CustomerManagementWorkspace() {
             <ButtonLink href="/modules/pos/new-sale" icon={Plus} variant="secondary">
               New Sale
             </ButtonLink>
+            <button
+              className="button button-danger"
+              type="button"
+              onClick={() => {
+                if (state.customers.length === 0) {
+                  setMessage('No customers to delete.');
+                  return;
+                }
+
+                if (
+                  window.confirm(
+                    `Delete all ${state.customers.length} customers? This action cannot be undone.`
+                  )
+                ) {
+                  for (let index = state.customers.length - 1; index >= 0; index -= 1) {
+                    deleteCustomer(index);
+                  }
+                  resetForm();
+                  setSearch('');
+                  setMessage('All customers deleted successfully.');
+                }
+              }}
+            >
+              <Trash2 className="button-icon" />
+              <span>Delete All</span>
+            </button>
           </div>
 
-          <section className="table-panel" style={{ marginTop: '18px' }}>
+          <section className="table-panel customer-responsive-table" style={{ marginTop: '18px' }}>
             <table className="data-table">
               <thead>
                 <tr>

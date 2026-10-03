@@ -124,6 +124,23 @@ export function PosPaymentMethodWorkspace() {
       return;
     }
 
+    // Persist sale centrally on the server so other devices & reports see it immediately
+    try {
+      await fetch('/api/modules/pos/sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...preview,
+          paymentReference: result.paymentReference,
+          gatewayTransactionId: result.gatewayTransactionId,
+          paymentStatus: 'Completed',
+          changeAmount: result.change,
+        }),
+      });
+    } catch (err) {
+      console.warn('Server sale sync failed, saved locally:', err);
+    }
+
     completeSaleWithPayment({
       paymentReference: result.paymentReference,
       gatewayTransactionId: result.gatewayTransactionId,

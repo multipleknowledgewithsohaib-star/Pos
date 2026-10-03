@@ -4,14 +4,12 @@ import { CalendarDays } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
   formatModuleDateRangeLabel,
+  getDefaultMonthRange,
   normalizeModuleDateRange,
   type ModuleDateRange,
 } from '@/lib/module-date-range';
 
-const DEFAULT_DASHBOARD_RANGE: ModuleDateRange = {
-  from: '2019-01-20',
-  to: '2019-02-28',
-};
+const DEFAULT_DASHBOARD_RANGE: ModuleDateRange = getDefaultMonthRange();
 
 export function DashboardDateRangePicker() {
   const [open, setOpen] = useState(false);

@@ -37,7 +37,12 @@ export function Sidebar({
       </div>
 
       <nav className="nav-list" aria-label="Primary navigation">
-        {navItems.map((item) => {
+        {navItems
+          .filter((item) => {
+            const label = item.label.trim().toLowerCase();
+            return label !== 'settings' && label !== 'backup & restore';
+          })
+          .map((item) => {
           const active =
             pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           const Icon = item.icon;

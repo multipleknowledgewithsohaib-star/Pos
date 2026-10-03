@@ -38,6 +38,7 @@ import { ToneBadge, type ToneBadgeTone } from '@/components/tone-badge';
 import {
   addDaysIso,
   calculateLineTotal,
+  calculateOrderTotals,
   formatPurchaseCurrency,
   formatPurchaseCurrencyLabel,
   formatPurchaseDate,
@@ -56,7 +57,7 @@ import {
   type PurchaseReturnLine,
   type PurchaseSupplierStatus,
 } from '@/lib/purchase-data';
-import { parsePurchaseOcrText, formatConfidence } from '@/lib/purchase-parser';
+import { parsePurchaseOcrText, formatConfidence, type ParsedPurchaseOcr } from '@/lib/purchase-parser';
 import {
   getPurchaseDashboardStats,
   getPurchaseOrderById,
@@ -653,10 +654,10 @@ function PurchaseLineItemCard({
             />
           </label>
           <label className="field-span-full">
-            <span>Medicine Name</span>
+            <span>Item Name</span>
             <input
               onChange={(event) => onUpdate(item.id, { medicine: event.target.value })}
-              placeholder="Type or select medicine"
+              placeholder="Type or select item"
               value={item.medicine}
             />
           </label>
@@ -1320,7 +1321,7 @@ export function PurchaseNewOrderWorkspace() {
       return;
     }
     if (!items.length) {
-      setMessage('Please add at least one medicine item with quantity.');
+      setMessage('Please add at least one item with quantity.');
       return;
     }
 
@@ -1388,6 +1389,39 @@ export function PurchaseNewOrderWorkspace() {
               onChange={(event) => patchDraft({ expectedDate: event.target.value })}
               type="date"
               value={state.draft.expectedDate}
+            />
+          </label>
+          <label>
+            <span>Advance Tax / Surcharges (PKR)</span>
+            <input
+              min="0"
+              onChange={(event) => {
+                const val = event.target.value === '' ? undefined : Number(event.target.value);
+                const currentSub = state.draft.subtotal ?? draftTotals.subtotal;
+                const newTotal = val !== undefined ? roundMoney(currentSub - draftTotals.discountTotal + val) : undefined;
+                patchDraft({
+                  taxAmount: val,
+                  ...(newTotal !== undefined ? { totalAmount: newTotal } : {}),
+                });
+              }}
+              placeholder="e.g. 891.37 or 159.15"
+              step="0.01"
+              type="number"
+              value={state.draft.taxAmount !== undefined && state.draft.taxAmount !== null ? state.draft.taxAmount : ''}
+            />
+          </label>
+          <label>
+            <span>Invoice Grand Total (PKR)</span>
+            <input
+              min="0"
+              onChange={(event) => {
+                const val = event.target.value === '' ? undefined : Number(event.target.value);
+                patchDraft({ totalAmount: val });
+              }}
+              placeholder="e.g. 31989.37"
+              step="0.01"
+              type="number"
+              value={state.draft.totalAmount !== undefined && state.draft.totalAmount !== null ? state.draft.totalAmount : ''}
             />
           </label>
           <label className="field-span-full">
@@ -1482,13 +1516,30 @@ export function PurchaseNewOrderWorkspace() {
             <span>Subtotal</span>
             <strong>{formatPurchaseCurrencyLabel(draftTotals.subtotal)}</strong>
           </div>
+          {draftTotals.taxAmount > 0 ? (
+            <div className="backup-info-row">
+              <span>Advance Tax / GST</span>
+              <strong style={{ color: '#0d9488' }}>+ {formatPurchaseCurrencyLabel(draftTotals.taxAmount)}</strong>
+            </div>
+          ) : null}
           <div className="backup-info-row">
             <span>Discount</span>
             <strong>{formatPurchaseCurrencyLabel(draftTotals.discountTotal)}</strong>
           </div>
-          <div className="backup-info-row">
-            <span>Total</span>
-            <strong>{formatPurchaseCurrencyLabel(draftTotals.total)}</strong>
+          <div
+            className="backup-info-row"
+            style={{
+              background: '#f0fdf4',
+              padding: '10px 12px',
+              borderRadius: '6px',
+              border: '1.5px solid #86efac',
+              margin: '6px 0',
+            }}
+          >
+            <span style={{ fontWeight: 700, color: '#166534' }}>Total Amount</span>
+            <strong style={{ fontSize: '1.15rem', color: '#15803d', fontWeight: 800 }}>
+              {formatPurchaseCurrencyLabel(draftTotals.total)}
+            </strong>
           </div>
           <div className="backup-info-row">
             <span>Draft Mode</span>
@@ -1621,7 +1672,7 @@ export function PurchaseOrderDetailsWorkspace({ orderId }: { orderId: string }) 
               <thead>
                 <tr>
                   <th>Code</th>
-                  <th>Medicine</th>
+                  <th>Item</th>
                   <th>Qty</th>
                   <th>Bonus</th>
                   <th>Total Qty</th>
@@ -1921,7 +1972,7 @@ export function PurchaseReceiveWorkspace() {
           <table className="data-table purchase-item-table">
             <thead>
               <tr>
-                <th>Medicine</th>
+                  <th>Item</th>
                 <th>Current Stock</th>
                 <th>Ordered Qty</th>
                 <th>Already Received</th>
@@ -2036,8 +2087,8 @@ export function PurchaseReceiveWorkspace() {
 
         <div className="backup-note-box">
           <strong>Inventory Sync</strong>
-          <p>Complete Receive par existing medicine quantity mein receive qty add hoti hai.</p>
-          <p>Agar medicine inventory mein nahi hai to woh automatically new medicine ban jati hai.</p>
+          <p>Complete Receive par existing item quantity mein receive qty add hoti hai.</p>
+          <p>Agar item inventory mein nahi hai to woh automatically new item ban jata hai.</p>
         </div>
       </aside>
     </div>
@@ -2151,7 +2202,7 @@ export function PurchaseReturnsWorkspace() {
           <table className="data-table purchase-item-table">
             <thead>
               <tr>
-                <th>Medicine</th>
+                <th>Item</th>
                 <th>Received Qty</th>
                 <th>Return Qty</th>
                 <th>Reason</th>
@@ -2436,36 +2487,197 @@ export function PurchaseSuppliersWorkspace() {
 
   return (
     <>
-      <section className="module-stats-grid">
+      <style jsx global>{`
+        .supplier-management-grid {
+          min-width: 0;
+        }
+
+        .supplier-form-panel,
+        .supplier-list-panel {
+          min-width: 0;
+        }
+
+        .supplier-form-fields {
+          min-width: 0;
+        }
+
+        .supplier-form-fields > label {
+          min-width: 0;
+        }
+
+        .supplier-form-fields input,
+        .supplier-form-fields select,
+        .supplier-form-fields textarea {
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .supplier-toolbar {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+        }
+
+        .supplier-search {
+          flex: 1 1 220px;
+          min-width: 0;
+        }
+
+        .supplier-search input {
+          min-width: 0;
+          width: 100%;
+        }
+
+        .supplier-table-scroll {
+          width: 100%;
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior-x: contain;
+          border-radius: inherit;
+        }
+
+        .supplier-table {
+          width: 100%;
+          min-width: 620px;
+        }
+
+        .supplier-table th,
+        .supplier-table td {
+          white-space: nowrap;
+        }
+
+        .supplier-table td:nth-child(2) {
+          white-space: normal;
+          min-width: 180px;
+        }
+
+        .supplier-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          min-width: max-content;
+        }
+
+        .supplier-actions .icon-button {
+          flex: 0 0 auto;
+        }
+
+        @media (max-width: 900px) {
+          .supplier-management-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .supplier-list-panel {
+            order: 2;
+          }
+
+          .supplier-form-panel {
+            order: 1;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .supplier-management-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+
+          .supplier-form-fields {
+            grid-template-columns: 1fr !important;
+          }
+
+          .supplier-form-fields .field-span-full {
+            grid-column: 1 / -1;
+          }
+
+          .supplier-toolbar {
+            align-items: stretch;
+          }
+
+          .supplier-search {
+            flex-basis: 100%;
+          }
+
+          .supplier-toolbar > .button,
+          .supplier-toolbar > a {
+            flex: 1 1 100%;
+            width: 100%;
+            justify-content: center;
+          }
+
+          .supplier-table-scroll {
+            margin-left: -2px;
+            margin-right: -2px;
+            width: calc(100% + 4px);
+          }
+
+          .supplier-table {
+            min-width: 680px;
+          }
+
+          .supplier-actions {
+            flex-wrap: nowrap;
+          }
+        }
+
+        @media (max-width: 380px) {
+          .supplier-management-stats {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
+      <section className="module-stats-grid supplier-management-stats">
         <StatCard icon={Truck} label="Total Suppliers" tone="blue" value={state.suppliers.length} />
         <StatCard icon={CircleCheck} label="Active Suppliers" tone="green" value={activeCount} />
         <StatCard icon={CircleAlert} label="Inactive Suppliers" tone="orange" value={inactiveCount} />
-        <StatCard icon={BadgeDollarSign} label="Outstanding Balance" tone="purple" value={formatPurchaseCurrencyLabel(state.suppliers.reduce((sum, supplier) => sum + supplier.balance, 0))} />
+        <StatCard
+          icon={BadgeDollarSign}
+          label="Outstanding Balance"
+          tone="purple"
+          value={formatPurchaseCurrencyLabel(state.suppliers.reduce((sum, supplier) => sum + supplier.balance, 0))}
+        />
       </section>
 
-      <div className="backup-create-grid">
-        <section className="section-panel backup-create-form">
+      <div className="backup-create-grid supplier-management-grid">
+        <section className="section-panel backup-create-form supplier-form-panel">
           <div className="settings-heading">
             <h2>{editingId ? 'Edit Supplier' : 'Add Supplier'}</h2>
             <ToneBadge tone={editingId ? 'warning' : 'primary'}>{editingId ? 'Editing' : 'New'}</ToneBadge>
           </div>
 
-          <div className="form-fields two-cols">
+          <div className="form-fields two-cols supplier-form-fields">
             <label className="field-span-full">
               <span>Supplier Name</span>
-              <input onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} value={form.name} />
+              <input
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                value={form.name}
+              />
             </label>
             <label>
               <span>Phone</span>
-              <input onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} value={form.phone} />
+              <input
+                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                value={form.phone}
+              />
             </label>
             <label>
               <span>Email</span>
-              <input onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} value={form.email} />
+              <input
+                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                value={form.email}
+              />
             </label>
             <label>
               <span>City</span>
-              <input onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))} value={form.city} />
+              <input
+                onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
+                value={form.city}
+              />
             </label>
             <label>
               <span>Contact Person</span>
@@ -2476,14 +2688,21 @@ export function PurchaseSuppliersWorkspace() {
             </label>
             <label className="field-span-full">
               <span>Status</span>
-              <select onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as 'Active' | 'Inactive' }))} value={form.status}>
+              <select
+                onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as 'Active' | 'Inactive' }))}
+                value={form.status}
+              >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
               </select>
             </label>
             <label className="field-span-full">
               <span>Notes</span>
-              <textarea onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} rows={4} value={form.notes} />
+              <textarea
+                onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+                rows={4}
+                value={form.notes}
+              />
             </label>
           </div>
 
@@ -2505,15 +2724,15 @@ export function PurchaseSuppliersWorkspace() {
           ) : null}
         </section>
 
-        <aside className="section-panel backup-summary-panel">
+        <aside className="section-panel backup-summary-panel supplier-list-panel">
           <div className="section-heading">
             <div>
               <h2>Supplier List</h2>
             </div>
           </div>
 
-          <div className="section-hero-inline-actions" style={{ justifyContent: 'flex-start' }}>
-            <label className="search-box">
+          <div className="section-hero-inline-actions supplier-toolbar" style={{ justifyContent: 'flex-start' }}>
+            <label className="search-box supplier-search">
               <Search className="button-icon" />
               <input
                 aria-label="Search suppliers"
@@ -2527,8 +2746,8 @@ export function PurchaseSuppliersWorkspace() {
             </ButtonLink>
           </div>
 
-          <section className="table-panel" style={{ marginTop: '18px' }}>
-            <table className="data-table">
+          <section className="table-panel supplier-table-scroll" style={{ marginTop: '18px' }}>
+            <table className="data-table supplier-table">
               <thead>
                 <tr>
                   <th>#</th>
@@ -2558,7 +2777,7 @@ export function PurchaseSuppliersWorkspace() {
                         <ToneBadge tone={supplier.status === 'Active' ? 'success' : 'danger'}>{supplier.status}</ToneBadge>
                       </td>
                       <td>
-                        <div className="row-actions">
+                        <div className="row-actions supplier-actions">
                           <button
                             className="icon-button"
                             type="button"
@@ -2582,7 +2801,11 @@ export function PurchaseSuppliersWorkspace() {
                             className="icon-button"
                             type="button"
                             title="Toggle status"
-                            onClick={() => updateSupplier(supplier.id, { status: supplier.status === 'Active' ? 'Inactive' : 'Active' })}
+                            onClick={() =>
+                              updateSupplier(supplier.id, {
+                                status: supplier.status === 'Active' ? 'Inactive' : 'Active',
+                              })
+                            }
                           >
                             <RotateCcw className="icon-button-icon" />
                           </button>
@@ -2620,7 +2843,7 @@ export function PurchaseOcrWorkspace() {
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [rawText, setRawText] = useState('');
-  const [parsed, setParsed] = useState<ReturnType<typeof parsePurchaseOcrText> | null>(null);
+  const [parsed, setParsed] = useState<ParsedPurchaseOcr | null>(null);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('Upload an invoice image, choose a sample below, or enter your Gemini API key for instant AI extraction.');
@@ -2655,7 +2878,7 @@ export function PurchaseOcrWorkspace() {
     }
   };
 
-  const applyParsedDraft = (result: ReturnType<typeof parsePurchaseOcrText>, sourceFileName: string) => {
+  const applyParsedDraft = (result: ParsedPurchaseOcr, sourceFileName: string) => {
     patchDraft({
       supplierName: result.supplierName || state.draft.supplierName,
       invoiceReference: result.invoiceReference || state.draft.invoiceReference,
@@ -2668,6 +2891,9 @@ export function PurchaseOcrWorkspace() {
       ocrText: result.rawText,
       ocrFileName: sourceFileName,
       ocrConfidence: result.confidence,
+      subtotal: result.subtotal,
+      taxAmount: result.taxAmount,
+      totalAmount: result.totalAmount,
       editingOrderId: null,
     });
     if (result.supplierName) {
@@ -2689,6 +2915,51 @@ export function PurchaseOcrWorkspace() {
     setMessage(`Loaded sample invoice: ${sample.title}. Extracted ${sample.itemCount} products with all batches and expiries!`);
   };
 
+  const prepareImageBase64 = (uploadFile: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawBase64 = e.target?.result as string;
+        // If file is already under 5MB, keep full native resolution without compression
+        if (uploadFile.size <= 5 * 1024 * 1024) {
+          resolve(rawBase64);
+          return;
+        }
+
+        const img = document.createElement('img');
+        img.onload = () => {
+          const maxDim = 3200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.94));
+          } else {
+            resolve(rawBase64);
+          }
+        };
+        img.onerror = () => resolve(rawBase64);
+        img.src = rawBase64;
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(uploadFile);
+    });
+  };
+
+
   const runOcr = async () => {
     if (!file && !rawText.trim()) {
       setMessage('Please upload an image, select a sample invoice, or paste text.');
@@ -2697,33 +2968,34 @@ export function PurchaseOcrWorkspace() {
 
     if (file) {
       setBusy(true);
-      setProgress(10);
+      setProgress(15);
       setSampleImage('');
       setSelectedSampleId('');
+      let progressTimer: any = null;
 
       try {
-        // Try Gemini Vision API first if API key is provided
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        setMessage('Optimizing invoice image...');
+        const imageBase64 = await prepareImageBase64(file);
+        setProgress(35);
+        setMessage('Extracting products, quantities, batches and totals via AI...');
 
-        const imageBase64 = await base64Promise;
-        setProgress(30);
+        progressTimer = setInterval(() => {
+          setProgress((prev) => (prev < 85 ? prev + 5 : prev));
+        }, 500);
 
         const res = await fetch('/api/modules/purchases/ocr', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageBase64,
-            mimeType: file.type || 'image/jpeg',
+            mimeType: 'image/jpeg',
             apiKey: geminiApiKey || undefined,
           }),
         });
 
+        if (progressTimer) clearInterval(progressTimer);
         const data = await res.json();
+        setProgress(95);
 
         if (data.success && data.parsed) {
           setRawText(data.parsed.rawText || '');
@@ -2733,27 +3005,22 @@ export function PurchaseOcrWorkspace() {
           return;
         }
 
-        // If API says requiresKey or failed, fallback to local Tesseract
-        setMessage('Processing via local OCR engine...');
-        setProgress(40);
-        const tesseract = await import('tesseract.js');
-        const result = await tesseract.recognize(file, 'eng', {
-          logger: (entry) => {
-            if (typeof entry.progress === 'number') {
-              setProgress(Math.round(40 + entry.progress * 55));
-            }
-          },
-        });
+        // If API returned a clear error or rate limit, display directly without hanging
+        if (data.message) {
+          setMessage(data.message);
+          return;
+        }
 
-        const text = result.data.text || '';
-        setRawText(text);
-        const parsedText = parsePurchaseOcrText(text);
+        // Fallback to text parser if available
+        setMessage('Processing raw text...');
+        const parsedText = parsePurchaseOcrText(rawText);
         setParsed(parsedText);
         applyParsedDraft(parsedText, file.name);
-        setMessage(`Local OCR complete. Confidence ${formatConfidence(parsedText.confidence)}. Tip: For 100% accuracy on dense invoices, enter a Gemini API Key above.`);
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : 'OCR failed. You can paste extracted text or choose a sample.');
+        if (progressTimer) clearInterval(progressTimer);
+        setMessage(error instanceof Error ? error.message : 'OCR failed. Please try again in a few moments.');
       } finally {
+        if (progressTimer) clearInterval(progressTimer);
         setBusy(false);
         setProgress(0);
       }
@@ -2914,30 +3181,83 @@ export function PurchaseOcrWorkspace() {
           </div>
         </div>
 
+        {/* High-visibility Blur Picture Warning */}
+        {parsed?.isBlurry || parsed?.blurWarning || (parsed?.warnings ?? []).some((w) => w.toLowerCase().includes('blur')) ? (
+          <div
+            style={{
+              margin: '0 0 16px 0',
+              padding: '14px 16px',
+              borderRadius: '8px',
+              background: '#fef2f2',
+              border: '2px solid #ef4444',
+              color: '#991b1b',
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'flex-start',
+            }}
+          >
+            <CircleAlert style={{ width: '22px', height: '22px', color: '#dc2626', flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <strong style={{ fontSize: '14px', display: 'block', marginBottom: '4px', color: '#991b1b' }}>
+                ⚠️ Blur Picture Warning!
+              </strong>
+              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.4, color: '#7f1d1d' }}>
+                {parsed?.blurWarning || 'Image is blurry or low quality. Details could not be extracted with high accuracy. Please re-upload a clear, well-lit photo of the invoice.'}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
         <div className="backup-info-list">
+          {/* Total Invoice Amount Highlight */}
+          <div
+            className="backup-info-row"
+            style={{
+              background: '#f0fdf4',
+              padding: '12px 14px',
+              borderRadius: '8px',
+              border: '1.5px solid #86efac',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <span style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+                Total Invoice Amount
+              </span>
+              {parsed?.taxAmount ? (
+                <small style={{ color: '#15803d', fontSize: '11px' }}>
+                  Subtotal: {formatPurchaseCurrencyLabel(parsed.subtotal ?? 0)} + Tax: {formatPurchaseCurrencyLabel(parsed.taxAmount)}
+                </small>
+              ) : null}
+            </div>
+            <strong style={{ fontSize: '18px', color: '#15803d', fontWeight: 800 }}>
+              {formatPurchaseCurrencyLabel(
+                parsed?.totalAmount ?? (parsed?.items?.length ? calculateOrderTotals(parsed.items).total : 0)
+              )}
+            </strong>
+          </div>
+
           <div className="backup-info-row">
             <span>Supplier</span>
             <strong>{parsed?.supplierName || state.draft.supplierName || '-'}</strong>
           </div>
           <div className="backup-info-row">
-            <span>Order No.</span>
+            <span>Invoice / Bill #</span>
             <strong>{parsed?.orderNo || 'Auto generated on save'}</strong>
           </div>
           <div className="backup-info-row">
-            <span>Invoice Ref.</span>
+            <span>Invoice Ref / Supply ID</span>
             <strong>{parsed?.invoiceReference || state.draft.invoiceReference || '-'}</strong>
           </div>
           <div className="backup-info-row">
-            <span>Order Date</span>
+            <span>Invoice Date</span>
             <strong>{parsed?.orderDate ? formatPurchaseDate(parsed.orderDate) : '-'}</strong>
           </div>
           <div className="backup-info-row">
-            <span>Shipment Date</span>
-            <strong>{parsed?.shipmentDate ? formatPurchaseDate(parsed.shipmentDate) : '-'}</strong>
-          </div>
-          <div className="backup-info-row">
-            <span>Expected Date</span>
-            <strong>{parsed?.expectedDate ? formatPurchaseDate(parsed.expectedDate) : '-'}</strong>
+            <span>Payment Method</span>
+            <strong>{parsed?.paymentMethod || 'Credit'}</strong>
           </div>
           <div className="backup-info-row">
             <span>Confidence</span>
@@ -2959,26 +3279,28 @@ export function PurchaseOcrWorkspace() {
           </div>
         </div>
 
-        <section className="table-panel" style={{ marginTop: '18px' }}>
-          <table className="data-table">
+        <section className="table-panel" style={{ marginTop: '18px', overflowX: 'auto' }}>
+          <table className="data-table" style={{ width: '100%', minWidth: '550px' }}>
             <thead>
               <tr>
-                <th>Medicine</th>
+                <th>Product / Item</th>
                 <th>Batch</th>
                 <th>Expiry</th>
-                <th>Qty</th>
-                <th>Price</th>
+                <th style={{ textAlign: 'center' }}>Qty</th>
+                <th style={{ textAlign: 'right' }}>Unit Price (TP)</th>
+                <th style={{ textAlign: 'right' }}>Total Amount</th>
               </tr>
             </thead>
             <tbody>
               {(parsed?.items ?? []).map((item) => {
                 const today = new Date().toISOString().slice(0, 10);
                 const isExpired = item.expiryDate && item.expiryDate < today;
+                const lineTotal = calculateLineTotal(item);
                 return (
                   <tr key={item.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{item.medicine}</div>
-                      {item.pack ? <small style={{ color: '#64748b' }}>{item.pack}</small> : null}
+                      {item.pack ? <small style={{ color: '#64748b' }}>Pack: {item.pack}</small> : null}
                     </td>
                     <td>
                       {item.batchNo ? (
@@ -3009,18 +3331,63 @@ export function PurchaseOcrWorkspace() {
                         <span style={{ color: '#94a3b8', fontSize: '12px' }}>Not detected</span>
                       )}
                     </td>
-                    <td>{item.qty}</td>
-                    <td>{formatPurchaseCurrencyLabel(calculateLineTotal(item))}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{item.qty}</td>
+                    <td style={{ textAlign: 'right', color: '#0f172a', fontWeight: 500 }}>
+                      {formatPurchaseCurrencyLabel(item.purchasePrice)}
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: '#16a34a' }}>
+                      {formatPurchaseCurrencyLabel(lineTotal)}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
+            {(parsed?.items ?? []).length > 0 ? (
+              <tfoot>
+                <tr style={{ background: '#f8fafc', fontWeight: 700, borderTop: '2px solid #e2e8f0' }}>
+                  <td colSpan={3} style={{ textAlign: 'right', padding: '10px 12px' }}>
+                    Total Units ({(parsed?.items ?? []).length} items):
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '10px 12px', color: '#2563eb' }}>
+                    {(parsed?.items ?? []).reduce((sum, it) => sum + it.qty, 0)}
+                  </td>
+                  <td style={{ textAlign: 'right', padding: '10px 12px', color: '#64748b', fontSize: '12px' }}>
+                    Items Subtotal:
+                  </td>
+                  <td style={{ textAlign: 'right', padding: '10px 12px', color: '#0f172a', fontSize: '14px', fontWeight: 700 }}>
+                    {formatPurchaseCurrencyLabel(
+                      parsed?.subtotal ?? (parsed?.items ?? []).reduce((s, it) => s + (it.qty * it.purchasePrice), 0)
+                    )}
+                  </td>
+                </tr>
+                {parsed?.taxAmount ? (
+                  <tr style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+                    <td colSpan={4} style={{ textAlign: 'right', padding: '6px 12px', color: '#0d9488', fontSize: '12px', fontWeight: 600 }}>
+                      Advance Tax u/s 236(h) / GST:
+                    </td>
+                    <td colSpan={2} style={{ textAlign: 'right', padding: '6px 12px', color: '#0d9488', fontSize: '13px', fontWeight: 700 }}>
+                      + {formatPurchaseCurrencyLabel(parsed.taxAmount)}
+                    </td>
+                  </tr>
+                ) : null}
+                <tr style={{ background: '#f0fdf4', borderTop: '2px solid #86efac' }}>
+                  <td colSpan={4} style={{ textAlign: 'right', padding: '10px 12px', color: '#166534', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase' }}>
+                    Invoice Grand Total:
+                  </td>
+                  <td colSpan={2} style={{ textAlign: 'right', padding: '10px 12px', color: '#15803d', fontSize: '16px', fontWeight: 800 }}>
+                    {formatPurchaseCurrencyLabel(
+                      parsed?.totalAmount ?? (parsed?.items ?? []).reduce((s, it) => s + (it.qty * it.purchasePrice), 0)
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            ) : null}
           </table>
         </section>
 
         {parsed?.warnings.length ? (
-          <div className="backup-note-box">
-            <strong>Warnings</strong>
+          <div className="backup-note-box" style={{ marginTop: '16px' }}>
+            <strong>Warnings & Remarks</strong>
             {parsed.warnings.map((warning) => (
               <p key={warning}>{warning}</p>
             ))}

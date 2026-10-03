@@ -56,7 +56,7 @@ type CatalogMedicine = (typeof posMedicineCatalog)[number];
 
 const RETURN_REASONS: PosReturnReason[] = [
   'Defective / Damaged',
-  'Expired Medicine',
+  'Expired Item',
   'Wrong Item / Customer Mind Change',
   'Doctor Prescription Changed',
   'Adverse / Allergic Reaction',
@@ -336,7 +336,7 @@ function buildReturnReceiptHtml(record: PosReturnExchangeRecord, settings: PosSe
       <div class="rule"></div>
       <div class="foot">
         <div>"Original Receipt / Voucher required for any future query"</div>
-        <div>"Medicines once exchanged cannot be re-exchanged"</div>
+        <div>"Items once exchanged cannot be re-exchanged"</div>
         <div class="thanks">THANK YOU FOR YOUR PATRONAGE</div>
       </div>
     </div>
@@ -529,7 +529,7 @@ export function PosReturnExchangeWorkspace() {
           const payload = await res.json();
           const items = (payload.data ?? []).map((m: any) => ({
             id: m.id,
-            name: m.medicineName?.trim() ?? 'Unnamed Medicine',
+            name: m.medicineName?.trim() ?? 'Unnamed Item',
             barcode: `MED-${String(m.id).padStart(4, '0')}`,
             category: m.category?.trim() || m.genericName?.trim() || 'General',
             unit: m.unit?.trim() || 'Item',
@@ -637,7 +637,7 @@ export function PosReturnExchangeWorkspace() {
     }
 
     if (activeReturnLines.length === 0) {
-      setErrorMessage('Please specify return quantity for at least one medicine item.');
+      setErrorMessage('Please specify return quantity for at least one item.');
       return;
     }
 
@@ -921,7 +921,7 @@ export function PosReturnExchangeWorkspace() {
                       Step 2: Choose Items to Return
                     </h2>
                     <p className="pos-panel-description">
-                      Enter quantity to return, select reason, and decide whether to restock medicine.
+                      Enter quantity to return, select reason, and decide whether to restock the item.
                     </p>
                   </div>
                   <div className="pos-summary-badge" style={{ background: '#fee2e2', color: '#991b1b', padding: '6px 14px', borderRadius: '8px', fontWeight: 800 }}>
@@ -933,7 +933,7 @@ export function PosReturnExchangeWorkspace() {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Medicine Name</th>
+                      <th>Item Name</th>
                       <th>Sold Qty</th>
                       <th>Avail. to Return</th>
                       <th style={{ minWidth: '100px' }}>Return Qty</th>
@@ -1027,7 +1027,7 @@ export function PosReturnExchangeWorkspace() {
                       Step 3: Exchange / Replacement Items (Optional)
                     </h2>
                     <p className="pos-panel-description">
-                      Add new medicines from inventory if the customer wants to exchange for other items.
+                      Add new items from inventory if the customer wants to exchange for other items.
                     </p>
                   </div>
                   {exchangeItems.length > 0 && (
@@ -1037,14 +1037,14 @@ export function PosReturnExchangeWorkspace() {
                   )}
                 </div>
 
-                {/* Search Medicine for Exchange */}
+                {/* Search Item for Exchange */}
                 <div className="pos-search-shell" style={{ marginTop: '12px' }}>
                   <div className="pos-search-field">
                     <Search className="pos-search-icon" />
                     <input
-                      aria-label="Search medicine for exchange"
+                      aria-label="Search item for exchange"
                       onChange={(e) => setExchangeSearchQuery(e.target.value)}
-                      placeholder="Search replacement medicine by name or barcode to add in exchange..."
+                        placeholder="Search replacement item by name or barcode to add in exchange..."
                       value={exchangeSearchQuery}
                     />
                   </div>
@@ -1085,7 +1085,7 @@ export function PosReturnExchangeWorkspace() {
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>Exchange Medicine</th>
+                        <th>Exchange Item</th>
                         <th>Qty</th>
                         <th>Unit Price</th>
                         <th>Discount</th>
@@ -1146,7 +1146,7 @@ export function PosReturnExchangeWorkspace() {
                   </table>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '18px', color: '#64748b', fontSize: '13px', background: '#f8fafc', borderRadius: '8px', marginTop: '12px' }}>
-                    No exchange items added yet. Search a medicine above if customer wants replacement items, or proceed directly with return refund.
+                    No exchange items added yet. Search an item above if customer wants replacement items, or proceed directly with return refund.
                   </div>
                 )}
               </article>

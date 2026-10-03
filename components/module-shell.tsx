@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronDown, Plus } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -139,10 +140,17 @@ export function ModuleShell({
         aria-hidden={sidebarOpen ? undefined : true}
         data-open={sidebarOpen ? 'true' : 'false'}
       >
-        <Link className="module-sidebar-brand" href="/modules/dashboard" onClick={closeSidebar}>
-          <span><Plus /></span>
-          <strong>Pharmacy<br />MVP</strong>
+        <Link className="module-sidebar-brand" href="/modules/dashboard" onClick={closeSidebar} style={{ gap: '0.65rem', alignItems: 'center' }}>
+          <Image
+            src="/solutionir-icon.png"
+            alt="SolutionIR Logo"
+            width={34}
+            height={34}
+            style={{ borderRadius: '6px', objectFit: 'contain' }}
+          />
+          <strong style={{ fontSize: '0.95rem', lineHeight: 1.2 }}>SolutionIR<br />POS</strong>
         </Link>
+
 
         <nav className="module-side-nav" aria-label="Module navigation">
           {filteredNavItems.map((item) => {

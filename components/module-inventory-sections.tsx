@@ -80,7 +80,7 @@ function buildInventorySummaryCards(medicines: Medicine[], batchStockTotal: numb
   );
 
   return [
-    { label: 'Total Medicines', value: formatMetric(active.length), tone: 'blue', icon: 'inventory', href: '/modules/inventory/medicines' },
+    { label: 'Total Items', value: formatMetric(active.length), tone: 'blue', icon: 'inventory', href: '/modules/inventory/medicines' },
     { label: 'Total Stock (Items)', value: formatMetric(totalStock), tone: 'green', icon: 'stock', href: '/modules/inventory/batch-details' },
     { label: 'Low Stock Items', value: formatMetric(lowStockCount), tone: 'orange', icon: 'alert', href: '/modules/inventory/low-stock' },
     { label: 'Out of Stock Items', value: formatMetric(outOfStockCount), tone: 'red', icon: 'out', href: '/modules/inventory/low-stock' },
@@ -163,7 +163,7 @@ export async function ExpiringSoonTable() {
         <table className="module-detail-table">
           <thead>
             <tr>
-              <th>Medicine Name</th>
+              <th>Item Name</th>
               <th>Batch No.</th>
               <th>Expiry Date</th>
               <th>Days Left</th>
@@ -224,7 +224,7 @@ export async function LowStockTable() {
         <table className="module-detail-table">
           <thead>
             <tr>
-              <th>Medicine Name</th>
+              <th>Item Name</th>
               <th>Batch No.</th>
               <th>Stock</th>
               <th>Low Stock Alert</th>
@@ -248,7 +248,7 @@ export async function LowStockTable() {
               </tr>
             )) : (
               <tr>
-                <td className="module-empty-cell" colSpan={5}>No low stock medicines found.</td>
+                <td className="module-empty-cell" colSpan={5}>No low stock items found.</td>
               </tr>
             )}
           </tbody>
@@ -275,7 +275,7 @@ export async function BatchStockDetails() {
     <>
       <section className="module-batch-summary">
         <div>
-          <span>Medicine</span>
+              <span>Item</span>
           <strong>{snapshot.medicineName}</strong>
         </div>
         <div>
@@ -296,7 +296,7 @@ export async function BatchStockDetails() {
         <table className="module-detail-table module-batch-table">
           <thead>
             <tr>
-              <th>Medicine</th>
+              <th>Item</th>
               <th>Batch No.</th>
               <th>Mfg. Date</th>
               <th>Expiry Date</th>

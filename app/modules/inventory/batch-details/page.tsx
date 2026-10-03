@@ -15,7 +15,7 @@ export default function BatchDetailsPage() {
           <>
             <Link className="module-page-button" href="/modules/inventory">
               <ArrowLeft />
-              <span>Back to Medicine</span>
+              <span>Back to Items</span>
             </Link>
             <Link className="module-page-button module-page-button-primary" href="/modules/inventory/batch/new">
               <Plus />

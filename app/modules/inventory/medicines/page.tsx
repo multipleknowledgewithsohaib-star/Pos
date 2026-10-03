@@ -11,8 +11,8 @@ export default async function MedicinesPage() {
   return (
     <ModuleShell active="Inventory">
       <InventoryPageHeader
-        title="Medicine Inventory"
-        subtitle="Manage all medicines in your stock"
+        title="Inventory Items"
+        subtitle="Manage all items in your stock"
       />
       <ModuleInventoryTable medicines={medicines} />
     </ModuleShell>

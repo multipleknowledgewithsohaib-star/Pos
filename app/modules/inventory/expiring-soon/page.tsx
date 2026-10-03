@@ -6,7 +6,7 @@ export default function ExpiringSoonPage() {
     <ModuleShell active="Inventory">
       <InventoryPageHeader
         title="Expiring Soon"
-        subtitle="Medicines expiring within 30 days"
+        subtitle="Items expiring within 30 days"
       />
       <ExpiringSoonTable />
     </ModuleShell>

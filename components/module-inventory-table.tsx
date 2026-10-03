@@ -48,7 +48,7 @@ export function ModuleInventoryTable({ medicines }: { medicines: Medicine[] }) {
               setQuery(event.target.value);
               setPage(1);
             }}
-            placeholder="Search medicine by name, generic name or code..."
+            placeholder="Search item by name, category or code..."
             value={query}
           />
         </label>
@@ -58,7 +58,7 @@ export function ModuleInventoryTable({ medicines }: { medicines: Medicine[] }) {
         </button>
         <Link href="/modules/inventory/new">
           <Plus />
-          <span>Add Medicine</span>
+          <span>Add Item</span>
         </Link>
       </section>
 
@@ -66,7 +66,7 @@ export function ModuleInventoryTable({ medicines }: { medicines: Medicine[] }) {
         <table className="module-inventory-table">
           <thead>
             <tr>
-              <th>Medicine Name</th>
+              <th>Item Name</th>
               <th>Generic Name</th>
               <th>Category</th>
               <th>Unit</th>
@@ -100,7 +100,7 @@ export function ModuleInventoryTable({ medicines }: { medicines: Medicine[] }) {
               </tr>
             )) : (
               <tr>
-                <td className="module-empty-cell" colSpan={9}>No medicines found for this search.</td>
+                <td className="module-empty-cell" colSpan={9}>No items found for this search.</td>
               </tr>
             )}
           </tbody>
